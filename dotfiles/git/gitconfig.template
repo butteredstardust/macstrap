@@ -1,0 +1,72 @@
+# ~/.gitconfig — template.
+#
+# scripts/dotfiles.sh copies this to ~/.gitconfig and fills in the identity.
+# It is NOT symlinked: your name and email are yours, and this repo is public.
+#
+# Privacy note: use GitHub's noreply address rather than a real mailbox, or
+# every commit you ever push publishes it. Find yours at
+# https://github.com/settings/emails — the form is
+#   <id>+<username>@users.noreply.github.com
+
+[user]
+	name = __GIT_NAME__
+	email = __GIT_EMAIL__
+
+[init]
+	defaultBranch = main
+
+[core]
+	editor = code --wait
+	excludesfile = ~/.config/git/ignore
+	# Delta gives syntax-highlighted, side-by-side-capable diffs.
+	pager = delta
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true      # n / N to jump between files in the pager
+	line-numbers = true
+	dark = true
+
+[merge]
+	conflictstyle = zdiff3   # shows the common ancestor; far easier to resolve
+
+[diff]
+	algorithm = histogram
+	colorMoved = default
+
+[push]
+	autoSetupRemote = true   # `git push` on a new branch just works
+	followTags = true
+
+[pull]
+	ff = only                # never create a surprise merge commit on pull
+
+[fetch]
+	prune = true             # drop local refs for branches deleted on the remote
+
+[rebase]
+	autosquash = true
+	autostash = true
+
+[rerere]
+	enabled = true           # remember conflict resolutions and replay them
+
+[branch]
+	sort = -committerdate    # most recent first in `git branch`
+
+[column]
+	ui = auto
+
+[alias]
+	s = status --short --branch
+	lg = log --oneline --graph --decorate --all
+	last = log -1 HEAD --stat
+	unstage = restore --staged
+	amend = commit --amend --no-edit
+
+[include]
+	# Machine- or work-specific overrides (a different signing key, a work
+	# email for a directory of repos). Not tracked. Optional.
+	path = ~/.gitconfig.local

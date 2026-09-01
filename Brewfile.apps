@@ -1,0 +1,33 @@
+# macstrap — GUI applications
+#
+#   brew bundle --file=Brewfile.apps
+#
+# Casks that need an admin password (Docker Desktop) will prompt. Everything
+# here is a tool, not entertainment — see Brewfile.optional for the rest.
+
+# --- Terminal & fonts -----------------------------------------------------
+cask "ghostty"                          # config in dotfiles/ghostty
+cask "font-jetbrains-mono-nerd-font"    # the font ghostty's config asks for
+cask "font-meslo-lg-nerd-font"          # fallback; some themes assume it
+
+# --- Editors --------------------------------------------------------------
+cask "visual-studio-code"
+cask "zed"
+
+# --- Containers -----------------------------------------------------------
+# Pick ONE. docker-desktop brings its own engine, CLI and compose; installing
+# the `docker` formula alongside it gives you two CLIs on PATH fighting over
+# the same socket. If you want a leaner setup, swap this for `colima` + the
+# `docker` formula instead.
+cask "docker-desktop"
+
+# --- Window management & utilities ---------------------------------------
+cask "rectangle"        # keyboard window snapping
+cask "maccy"            # clipboard history
+cask "swift-quit"       # ⌘W on the last window quits the app
+
+# --- Browsers -------------------------------------------------------------
+cask "google-chrome"    # kept for devtools/automation, not as default browser
+
+# --- Security -------------------------------------------------------------
+cask "enpass"           # password manager (offline vault)

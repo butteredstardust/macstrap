@@ -1,0 +1,46 @@
+# Ghostty — ~/.config/ghostty/config
+#
+# Managed by macstrap. Ghostty applies the LAST occurrence of a key, so
+# declaring a setting twice silently discards the first one. Each key appears
+# exactly once below; keep it that way.
+#
+# Reload without restarting: ⌘, opens this file, ⇧⌘, reloads it.
+# See every default and its docs with: ghostty +show-config --default --docs
+
+# --- Theme ----------------------------------------------------------------
+theme = Gruvbox Dark
+# Ghostty ships hundreds; browse them with: ghostty +list-themes
+# For an auto light/dark switch, use: theme = light:GruvboxLight,dark:GruvboxDark
+
+# Bump low-contrast pairs in a theme until they are legible. 1.0 disables.
+minimum-contrast = 1.3
+
+# --- Font -----------------------------------------------------------------
+# Nerd Font variant is required for the glyphs in starship and eza --icons.
+# Installed by Brewfile.apps as font-jetbrains-mono-nerd-font.
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+font-thicken = true      # macOS-only; compensates for thin stem rendering
+
+# --- Window ---------------------------------------------------------------
+window-height = 36
+window-width = 160
+window-padding-x = 12
+window-padding-y = 8
+window-padding-balance = true
+background-opacity = 0.96
+background-blur = 10
+unfocused-split-opacity = 0.6
+
+# --- macOS ----------------------------------------------------------------
+macos-titlebar-style = tabs
+macos-option-as-alt = left   # left ⌥ sends Esc+ for readline; right ⌥ still types é/ø
+
+# --- Cursor & mouse -------------------------------------------------------
+cursor-style = bar
+mouse-hide-while-typing = true
+
+# --- Keybindings ----------------------------------------------------------
+# Shift+Enter inserts a newline instead of submitting. Required by REPLs and
+# CLI agents that treat a bare Enter as "send".
+keybind = shift+enter=text:\n

@@ -1,0 +1,145 @@
+# ~/.zshrc — interactive shells only.
+#
+# Managed by macstrap. Machine-specific things (tokens, per-project paths,
+# work-only aliases) go in ~/.zshrc.local, which is sourced at the very end and
+# is never committed.
+#
+# Ordering in this file is load-bearing. See docs/03-shell.md before moving
+# anything: compinit must run before the zsh-* plugins, and
+# zsh-syntax-highlighting must be sourced last.
+
+# --- PATH -----------------------------------------------------------------
+# Homebrew itself is set up in ~/.zprofile (login shells) so non-interactive
+# shells inherit it. Only additions go here.
+#
+# Append-or-skip rather than blind prepend: sourcing this file twice (common
+# when a terminal re-execs the shell) would otherwise stack duplicates.
+path_prepend() {
+  case ":$PATH:" in
+    *":$1:"*) ;;
+    *) [ -d "$1" ] && export PATH="$1:$PATH" ;;
+  esac
+}
+
+path_prepend "$HOME/.local/bin"                  # uv / pipx / standalone installs
+path_prepend "${PNPM_HOME:-$HOME/Library/pnpm}"  # pnpm global bins
+path_prepend "$HOME/.bun/bin"
+export PNPM_HOME="${PNPM_HOME:-$HOME/Library/pnpm}"
+
+# Rust toolchains (rustup). Guarded: the file only exists after `rustup-init`.
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# --- Environment ----------------------------------------------------------
+export EDITOR="code --wait"     # matches git's core.editor; see docs/08
+export VISUAL="$EDITOR"
+export PAGER="less -FRX"        # -F: quit if one screen, -R: colour, -X: no clear
+export CLICOLOR=1
+
+# History: large, deduplicated, shared between panes, written as you go.
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=100000
+SAVEHIST=100000
+setopt HIST_IGNORE_ALL_DUPS HIST_REDUCE_BLANKS HIST_VERIFY
+setopt INC_APPEND_HISTORY SHARE_HISTORY EXTENDED_HISTORY
+setopt HIST_IGNORE_SPACE        # a leading space keeps a command out of history
+
+setopt AUTO_CD                  # `foo/` instead of `cd foo/`
+setopt INTERACTIVE_COMMENTS     # allow `# ...` when pasting commands
+
+# --- Prompt ---------------------------------------------------------------
+command -v starship >/dev/null && eval "$(starship init zsh)"
+
+# --- Keybindings ----------------------------------------------------------
+# Up/Down search history for what you have already typed, instead of walking
+# every command blindly. The `-end` widgets leave the cursor at end of line.
+autoload -U history-search-end
+zle -N history-beginning-search-backward-end history-search-end
+zle -N history-beginning-search-forward-end history-search-end
+bindkey "^[[A" history-beginning-search-backward-end
+bindkey "^[[B" history-beginning-search-forward-end
+
+# --- Aliases --------------------------------------------------------------
+if command -v eza >/dev/null; then
+  unalias -m 'ls' 'll' 2>/dev/null
+  alias ls='eza --header --group --git --long'
+  alias ll='eza --header --group --git --long --all'
+  alias ls.tree='eza --header --group --tree --level=2 --git --long --icons'
+  alias ll.tree='eza --header --group --tree --level=2 --git --long --icons --all'
+fi
+
+command -v bat  >/dev/null && alias cat='bat --paging=never' && alias catp='bat'
+command -v procs >/dev/null && alias ps='procs'
+command -v dust  >/dev/null && alias du='dust'
+
+alias ..='cd ..'
+alias ...='cd ../..'
+alias g='git'
+alias gs='git status --short --branch'
+alias gd='git diff'
+alias reload='exec zsh'
+
+# --- Completion -----------------------------------------------------------
+if command -v brew >/dev/null; then
+  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+fi
+autoload -Uz compinit
+compinit
+
+# Everything below must come AFTER compinit.
+
+# Case-insensitive matching matters here: the macOS filesystem is
+# case-insensitive, so `cd ~/dev` works and you type lowercase out of habit —
+# but zsh completion is case-sensitive by default, so Tab matched nothing and
+# looked broken. Try exact first, then lower->upper, then partial word
+# (`~/D/dd` -> `~/Dev/devtools`).
+zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+
+# One Tab lists matches, a second opens an arrow-navigable menu.
+zstyle ':completion:*' menu select
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+
+# Cache the slow completers (brew, docker, kubectl) instead of recomputing.
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$HOME/.zcompcache"
+
+zmodload zsh/complist    # required by the arrow-key menu above
+
+# --- Ghostty over SSH -----------------------------------------------------
+# Ghostty sets TERM=xterm-ghostty and almost no remote host has that terminfo
+# entry. Without it the remote side falls back to something crippled: garbled
+# redraws, dead arrow keys, broken TUIs. This pushes the local entry to a host,
+# once per host.
+ghostty-terminfo() {
+  if (( $# == 0 )); then
+    print -u2 'usage: ghostty-terminfo <ssh-host> [ssh-args...]'
+    print -u2 'installs the xterm-ghostty terminfo entry into ~/.terminfo on the remote host'
+    return 2
+  fi
+  infocmp -x xterm-ghostty | ssh "$@" -- 'mkdir -p ~/.terminfo && tic -x -o ~/.terminfo -' \
+    && print "xterm-ghostty installed on $1"
+}
+
+# For hosts you cannot or should not write to (shared boxes, appliances,
+# one-off jumps): connect claiming to be a plain xterm. Loses a few niceties,
+# never breaks.
+alias ssh-dumb='TERM=xterm-256color ssh'
+
+# --- Plugins --------------------------------------------------------------
+# Both wrap ZLE widgets, so they must load after compinit and after the `zle -N`
+# calls above — and syntax-highlighting must be LAST, as its README requires.
+# Loading these before compinit is what produces garbled redraws.
+if command -v brew >/dev/null; then
+  _brew_prefix="$(brew --prefix)"
+  [ -r "$_brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ] &&
+    source "$_brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [ -r "$_brew_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] &&
+    source "$_brew_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  unset _brew_prefix
+fi
+
+# --- Local overrides ------------------------------------------------------
+# Last, so it wins. Not tracked by git. Put secrets and host-specific paths
+# here, never in this file.
+[ -r "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"

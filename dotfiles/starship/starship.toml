@@ -1,0 +1,66 @@
+# Starship — ~/.config/starship.toml
+#
+# Deliberately close to the default. A prompt that runs slow commands on every
+# keystroke is worse than a plain one; each module below is either cached by
+# starship or reads a single file.
+#
+# Requires a Nerd Font for the glyphs (Brewfile.apps installs one).
+# Full reference: https://starship.rs/config/
+
+add_newline = true
+command_timeout = 800   # ms; a module slower than this is dropped, not awaited
+
+format = """
+$directory\
+$git_branch$git_status\
+$nodejs$rust$python$package\
+$docker_context\
+$cmd_duration\
+$line_break\
+$character"""
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = "bold cyan"
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+
+[git_status]
+style = "bold yellow"
+
+[cmd_duration]
+min_time = 2000         # only annotate commands that actually took a while
+format = "[ $duration]($style) "
+style = "yellow"
+
+[nodejs]
+symbol = " "
+detect_files = ["package.json", ".nvmrc"]
+
+[rust]
+symbol = " "
+
+[python]
+symbol = " "
+# Show the venv name but not the full interpreter path.
+format = '[${symbol}(\($virtualenv\) )]($style)'
+
+[package]
+disabled = true         # version number of the local package is rarely useful
+
+[docker_context]
+symbol = " "
+only_with_files = true
+
+[aws]
+disabled = true
+
+[gcloud]
+disabled = true

@@ -1,0 +1,65 @@
+// VS Code user settings.
+//
+// Installed to:
+//   ~/Library/Application Support/Code/User/settings.json
+//
+// Anything with a token, a URL to a private service, or a per-machine path
+// belongs in workspace settings (.vscode/settings.json in the project), not
+// here. This file is public.
+{
+  // --- Privacy ------------------------------------------------------------
+  "telemetry.telemetryLevel": "off",
+  "telemetry.editStats.enabled": false,
+  "telemetry.feedback.enabled": false,
+  "update.showReleaseNotes": false,
+  "workbench.startupEditor": "none",
+  "extensions.ignoreRecommendations": true,
+
+  // --- Appearance ---------------------------------------------------------
+  "workbench.colorTheme": "Tokyo Night",
+  "editor.fontFamily": "'JetBrainsMono Nerd Font', Menlo, monospace",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 13,
+  "editor.minimap.enabled": false,
+  "editor.stickyScroll.enabled": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.cursorBlinking": "expand",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.smoothScrolling": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.rulers": [100],
+
+  // --- Editing ------------------------------------------------------------
+  "files.autoSave": "onFocusChange",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+
+  // --- Terminal -----------------------------------------------------------
+  // Font must match the editor's, or box-drawing characters in TUIs misalign.
+  "terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font'",
+  "terminal.integrated.initialHint": false,
+  "terminal.integrated.enableMultiLinePasteWarning": "never",
+
+  // --- Git ----------------------------------------------------------------
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+
+  // --- Friction removal ---------------------------------------------------
+  // These trade a safety net for speed. Fine on a personal machine where every
+  // project is in git; reconsider on a shared or work machine.
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "security.workspace.trust.enabled": false,
+  "security.promptForLocalFileProtocolHandling": false,
+
+  // --- Languages ----------------------------------------------------------
+  "python.analysis.typeCheckingMode": "standard",
+  "[python]": { "editor.defaultFormatter": "ms-python.python" },
+  "[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" },
+  "[markdown]": { "editor.wordWrap": "on", "editor.formatOnSave": false }
+}

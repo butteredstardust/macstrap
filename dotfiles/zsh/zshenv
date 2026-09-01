@@ -1,0 +1,22 @@
+# ~/.zshenv — sourced by EVERY zsh, including non-interactive ones.
+#
+# Managed by macstrap. Keep this file tiny and side-effect free: it runs for
+# every script, every editor subshell, every `ssh host command`. Anything slow
+# or interactive belongs in ~/.zshrc.
+#
+# The one thing that legitimately lives here is environment a *non-interactive*
+# tool needs. Build tooling shells out with `zsh -c`, which skips .zshrc
+# entirely — a variable exported only there is invisible to it.
+
+# Rust toolchain, needed by editors and build scripts that never see .zshrc.
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# Machine-local secrets and signing keys. Read from a file rather than pasted,
+# so the value lives in exactly one place and never reaches this repo.
+#
+# Example ~/.zshenv.local:
+#   if [ -r "$HOME/.keys/updater.key" ]; then
+#     export SIGNING_PRIVATE_KEY="$(cat "$HOME/.keys/updater.key")"
+#     export SIGNING_PRIVATE_KEY_PASSWORD=""   # empty on purpose: an unset var
+#   fi                                         # makes the CLI stop at a prompt
+[ -r "$HOME/.zshenv.local" ] && . "$HOME/.zshenv.local"

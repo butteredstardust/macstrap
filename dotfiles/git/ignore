@@ -1,0 +1,23 @@
+# ~/.config/git/ignore — global ignores.
+#
+# For things that are never worth committing in ANY repo. Project-specific
+# patterns belong in that project's .gitignore, not here — a global rule that
+# hides a file from collaborators who don't share it causes real confusion.
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editors
+.idea/
+*.swp
+*~
+
+# Tooling local state
+.env.local
+.direnv/
+
+# Claude Code writes per-machine permissions here; it is explicitly local.
+**/.claude/settings.local.json

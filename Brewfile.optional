@@ -1,0 +1,37 @@
+# macstrap — optional / taste-dependent
+#
+#   brew bundle --file=Brewfile.optional
+#
+# Nothing here is required for a working dev machine. Delete freely — this file
+# is the designated home for "I might want this", so the core Brewfile stays
+# honest.
+
+# --- AI / agent tooling ---------------------------------------------------
+# Claude Code installs via its own installer, not brew — see docs/07-editors.md.
+brew "ollama"                    # local models
+cask "lm-studio"                 # local model GUI + OpenAI-compatible server
+
+# --- Extra CLI ------------------------------------------------------------
+brew "cocogitto"                 # conventional commits: check, changelog, bump
+brew "git-filter-repo"           # history surgery (rewriting authors, purging secrets)
+brew "ack"                       # only if muscle memory demands it; ripgrep is better
+brew "caddy"                     # local HTTPS reverse proxy
+brew "nvm"                       # only if a project pins an old Node
+
+# --- Mac housekeeping -----------------------------------------------------
+cask "pearcleaner"               # uninstaller that actually removes leftovers
+cask "qdirstat"                  # disk usage, graphical
+cask "applite"                   # GUI over Homebrew casks
+cask "balenaetcher"              # flash SD cards / USB images
+
+# --- Media & personal -----------------------------------------------------
+cask "vlc"
+cask "spotify"
+cask "transmission"
+cask "discord"
+cask "steam"
+
+# --- Other ----------------------------------------------------------------
+cask "cyberduck"                 # SFTP/S3 browser
+cask "textmate"                  # fast plain-text editor
+cask "corretto"                  # JDK, only if you touch Java

@@ -1,0 +1,31 @@
+# VS Code extensions, one id per line. Blank lines and # comments ignored.
+#
+# Install:  scripts/editors.sh
+# Refresh:  code --list-extensions > dotfiles/vscode/extensions.txt
+#
+# Kept to things that earn their startup cost. Notably absent: multiple
+# overlapping AI assistants — pick one, they fight over inline suggestions.
+
+# --- Core ---------------------------------------------------------------
+esbenp.prettier-vscode
+dbaeumer.vscode-eslint
+davidanson.vscode-markdownlint
+enkia.tokyo-night
+
+# --- Git ----------------------------------------------------------------
+mhutchie.git-graph
+github.vscode-github-actions
+
+# --- Languages ----------------------------------------------------------
+ms-python.python
+ms-python.vscode-pylance
+ms-python.debugpy
+rust-lang.rust-analyzer
+tauri-apps.tauri-vscode
+
+# --- Containers & remote ------------------------------------------------
+ms-azuretools.vscode-containers
+ms-vscode-remote.remote-containers
+
+# --- AI (pick one) ------------------------------------------------------
+anthropic.claude-code

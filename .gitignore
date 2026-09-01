@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Local, machine-specific overrides — never commit these
+*.local
+local/
+dotfiles/git/gitconfig
+secrets/
+
+# Editors
+.idea/
+*.swp
+
+# Claude Code per-project local settings
+**/.claude/settings.local.json
