@@ -25,7 +25,7 @@ Requires macOS 14+ on Apple Silicon or Intel. Nothing is installed as root.
 | **Terminal** | Ghostty with a Nerd Font, one deduplicated config |
 | **CLI** | `eza` `bat` `fd` `ripgrep` `dust` `procs` `delta` `jq` `gh` `htop` |
 | **Languages** | rustup, node + pnpm + bun, uv for Python |
-| **Editors** | VS Code (settings + extensions) and Zed, both version-controlled |
+| **Editors** | VS Code, settings and extension list version-controlled |
 | **System** | Finder, keyboard, Dock and screenshot defaults — opt-in, all reversible |
 | **Upkeep** | `doctor.sh` health check, drift detection against the Brewfiles |
 
@@ -64,7 +64,7 @@ scripts/
   packages.sh             brew bundle + drift report
   dotfiles.sh             symlink dotfiles, render git identity
   languages.sh            rust toolchain, corepack, uv tools
-  editors.sh              VS Code settings + extensions, Zed
+  editors.sh              VS Code settings + extensions, Claude Code
   macos-defaults.sh       system preferences (opt-in)
   doctor.sh               read-only health check
   test.sh                 static checks on the repo itself
@@ -84,7 +84,7 @@ docs/                     why each decision was made
 | [04 — Terminal](docs/04-terminal.md) | Ghostty config, Nerd Fonts, terminfo over SSH |
 | [05 — Languages](docs/05-languages.md) | rustup, node, uv, and installing exactly one Docker |
 | [06 — Apps](docs/06-apps.md) | the three Brewfiles and why they are split |
-| [07 — Editors](docs/07-editors.md) | VS Code and Zed settings, and what must never go in them |
+| [07 — Editors](docs/07-editors.md) | VS Code settings, extensions, and what must never go in them |
 | [08 — Git & GitHub](docs/08-git-github.md) | identity, noreply email, SSH keys, signing |
 | [09 — macOS defaults](docs/09-macos-defaults.md) | every `defaults write`, and how to reverse it |
 | [10 — Maintenance](docs/10-maintenance.md) | weekly routine, catching drift, migrating |

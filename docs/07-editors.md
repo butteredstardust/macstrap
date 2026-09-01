@@ -4,8 +4,23 @@
 
 | Path | Managed as |
 |---|---|
-| `~/Library/Application Support/Code/User/settings.json` | symlink → `dotfiles/vscode/settings.json` |
+| `~/Library/Application Support/Code/User/settings.json` | **merged** from `dotfiles/vscode/settings.json` |
 | extension list | `dotfiles/vscode/extensions.txt` |
+
+### Why settings.json is merged and not symlinked
+
+Every other dotfile here is a symlink, on the principle that editing the live file *is* editing the
+repo. `settings.json` is the one exception, because VS Code writes to it — extensions persist their
+own state there through the settings UI, and some of that state is secret. The machine this repo was
+distilled from had an `ANTHROPIC_AUTH_TOKEN` and a `localhost` service URL in this file, put there by
+an extension, not by hand. A symlink would have committed both to a public repo the next time the
+extension saved.
+
+So `scripts/editors.sh` merges: the repo's keys win for the keys the repo declares, and anything else
+already in the file is left alone. Same rule as `~/.gitconfig`, for the same reason.
+
+The consequence to know about: **your local additions are never captured automatically.** If you
+change a setting in the UI and want it tracked, add it to `dotfiles/vscode/settings.json` yourself.
 
 ```bash
 scripts/editors.sh                                    # apply settings + extensions
@@ -36,22 +51,28 @@ prevents.
 
 ### Extensions
 
-Kept short. Notable omission: **multiple AI assistants**. Copilot, Claude Code, Continue, Kilo and
-friends all register inline-completion providers; with two or more installed they race, flicker, and
-you cannot tell which one produced a suggestion. Pick one.
+Kept short, and the rule is "one extension per job" rather than "as few as possible".
+
+The distinction that matters is **inline-completion providers versus agents you invoke**. Copilot,
+Gemini Code Assist, Continue and friends all register a provider for the same ghost-text slot; with
+two or more installed they race, flicker, and you cannot tell which one produced a suggestion. Pick
+one. Agent extensions you summon deliberately — Claude Code, Kilo, opencode — do not compete for that
+slot and several can coexist. Three is fine. The fourth is how it starts going wrong.
+
+The same rule catches non-AI duplicates: two Docker extensions means two container panels and two
+sets of palette commands. `docker.docker` supersedes `ms-azuretools.vscode-docker`; keep the former.
 
 Also skipped: language packs whose language server duplicates one already bundled (installing both
 `vtsls` and the built-in TypeScript server means two servers indexing the same project).
 
-## Zed
+## One editor
 
-`~/.config/zed/settings.json` → `dotfiles/zed/settings.json`.
+There is deliberately no second GUI editor here. A second editor is only worth its config, its
+extension set and its keymap divergence if you actually reach for it, and "fast editor for big
+files" is a job `bat`, `rg` and `less` already do from a terminal that is already open.
 
-`"base_keymap": "VSCode"` so muscle memory carries between the two. Telemetry off. Zed's defaults
-are good, so the file is short on purpose.
-
-Where Zed wins: opening a multi-hundred-megabyte log, or a quick edit where VS Code's startup is the
-slowest part of the task.
+If you do want one, add the cask and a `dotfiles/<editor>/` directory; the symlink helper in
+`scripts/lib.sh` does not care which editor it is.
 
 ## CLI agents
 

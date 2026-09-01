@@ -56,21 +56,42 @@ confirm() {
 # --- Filesystem -----------------------------------------------------------
 # backup <path> — move an existing file/dir aside with a timestamp suffix.
 # Uses BSD `date` syntax; these scripts are macOS-only by design.
-backup() {
+# backup <path>            — move the file aside. Use before REPLACING it.
+# backup_copy <path>       — copy it aside. Use before EDITING IT IN PLACE.
+#
+# Getting these two confused is a data-loss bug, not a style question: a merge
+# that runs `backup` first finds nothing left to merge into and silently writes
+# only the new content. Ask "does the next step still need to read this file?"
+# — if yes, it is backup_copy.
+backup_copy() {
   local target="$1"
-  [ -e "$target" ] || [ -L "$target" ] || return 0
+  [ -f "$target" ] || return 0
+  local dest
+  dest="$(_backup_dest "$target")"
+  warn "backing up $target -> $dest"
+  run cp -p "$target" "$dest"
+}
 
-  # Second resolution is not enough: two links replaced in the same second
-  # would collide, and `mv` onto an existing directory nests instead of
-  # failing. Find a free name rather than trusting the timestamp.
-  local stamp dest n=0
+# Shared naming. Second resolution is not enough: two files handled in the same
+# second would collide, and `mv` onto an existing directory nests instead of
+# failing. Find a free name rather than trusting the timestamp.
+_backup_dest() {
+  local target="$1" stamp dest n=0
   stamp="$(date +%Y%m%d-%H%M%S)"
   dest="$target.bak-$stamp"
   while [ -e "$dest" ] || [ -L "$dest" ]; do
     n=$((n + 1))
     dest="$target.bak-$stamp.$n"
   done
+  printf '%s\n' "$dest"
+}
 
+backup() {
+  local target="$1"
+  [ -e "$target" ] || [ -L "$target" ] || return 0
+
+  local dest
+  dest="$(_backup_dest "$target")"
   warn "backing up $target -> $dest"
   run mv "$target" "$dest"
 }

@@ -12,7 +12,6 @@ cask "font-meslo-lg-nerd-font"          # fallback; some themes assume it
 
 # --- Editors --------------------------------------------------------------
 cask "visual-studio-code"
-cask "zed"
 
 # --- Containers -----------------------------------------------------------
 # Pick ONE. docker-desktop brings its own engine, CLI and compose; installing

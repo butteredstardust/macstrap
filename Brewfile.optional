@@ -37,7 +37,6 @@ cask "textmate"                  # fast plain-text editor
 cask "corretto"                  # JDK, only if you touch Java
 # Also on the App Store. If you already have the MAS copy, delete it before
 # installing this one rather than running both — see docs/06-apps.md.
-cask "the-unarchiver"            # archive formats macOS will not open
 cask "raspberry-pi-imager"       # flash SD cards with OS images
 
 # --- Mac App Store --------------------------------------------------------
@@ -57,6 +56,10 @@ mas "Dark Reader for Safari", id: 1438243180
 mas "uBlock Origin Lite", id: 6745342698
 mas "Infuse", id: 1136220934                # video player; no cask exists
 mas "Bitdefender Virus Scanner", id: 500154009
+mas "The Unarchiver", id: 425424353         # archive formats macOS will not open.
+                                            # A `the-unarchiver` cask also exists;
+                                            # installing both gives you two copies
+                                            # competing for the same file handlers.
 
 # NOTE: Hush, Dark Reader and uBlock Origin Lite are Safari EXTENSIONS shipped
 # inside a container app. Installing the app does not enable the extension —

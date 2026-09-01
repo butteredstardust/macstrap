@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Editor configuration: VS Code settings + extensions, Zed settings.
+# Editor configuration: VS Code settings + extensions, and the Claude Code CLI.
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -10,7 +10,60 @@ VSCODE_USER_DIR="$HOME/Library/Application Support/Code/User"
 
 if have code; then
   run mkdir -p "$VSCODE_USER_DIR"
-  link dotfiles/vscode/settings.json "$VSCODE_USER_DIR/settings.json"
+
+  # settings.json is MERGED, not symlinked — and this is not a style choice.
+  #
+  # VS Code writes to this file itself: extensions persist state into it, and
+  # several of them persist secrets. On the machine this repo was distilled
+  # from it held an ANTHROPIC_AUTH_TOKEN and a localhost service URL, put there
+  # by an extension's settings UI, not by hand. A symlink would have committed
+  # both to a public repo the next time the extension touched them.
+  #
+  # So: the repo's keys are authoritative for the keys the repo declares, and
+  # anything else already in the file is left alone. Same rule as ~/.gitconfig.
+  # python3 is guaranteed present — the Command Line Tools ship it, and
+  # preflight installs those.
+  if [ "$DRY_RUN" = "1" ]; then
+    skip "would merge dotfiles/vscode/settings.json into $VSCODE_USER_DIR/settings.json"
+  else
+    # backup_copy, NOT backup: the merge below reads this same file. `backup`
+    # moves it aside, so the merge would find nothing, start from an empty
+    # object and write only the repo's keys — silently deleting every setting
+    # VS Code had put there itself.
+    backup_copy "$VSCODE_USER_DIR/settings.json"
+    MACSTRAP_ROOT="$MACSTRAP_ROOT" VSCODE_USER_DIR="$VSCODE_USER_DIR" python3 - <<'PY'
+import collections, json, os, re
+
+dst = os.path.join(os.environ["VSCODE_USER_DIR"], "settings.json")
+src = os.path.join(os.environ["MACSTRAP_ROOT"], "dotfiles/vscode/settings.json")
+
+
+def load(path):
+    """VS Code writes JSONC. Strip line comments and trailing commas."""
+    if not os.path.exists(path):
+        return collections.OrderedDict()
+    text = open(path).read()
+    text = re.sub(r"^\s*//.*$", "", text, flags=re.M)
+    text = re.sub(r",(\s*[}\]])", r"\1", text)
+    if not text.strip():
+        return collections.OrderedDict()
+    return json.loads(text, object_pairs_hook=collections.OrderedDict)
+
+
+merged = load(dst)
+added = []
+for key, value in load(src).items():
+    if key not in merged:
+        added.append(key)
+    merged[key] = value
+
+with open(dst, "w") as fh:
+    json.dump(merged, fh, indent=2)
+    fh.write("\n")
+
+print("  ok settings.json merged (%d added, %d kept)" % (len(added), len(merged) - len(added)))
+PY
+  fi
 
   log "Installing extensions"
   installed="$(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')"
@@ -29,13 +82,6 @@ if have code; then
 else
   warn "the 'code' command is not on PATH"
   warn "open VS Code and run: Shell Command: Install 'code' command in PATH"
-fi
-
-# --- Zed ------------------------------------------------------------------
-if [ -d "/Applications/Zed.app" ] || have zed; then
-  link dotfiles/zed/settings.json "$HOME/.config/zed/settings.json"
-else
-  skip "Zed not installed"
 fi
 
 # --- Claude Code ----------------------------------------------------------

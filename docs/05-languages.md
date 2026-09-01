@@ -87,6 +87,25 @@ uv run script.py            # runs in the project env, no activation
 uv tool install ruff        # global CLI in its own isolated venv
 ```
 
+### Migrating off pipx and conda
+
+If you already have them, `uv` takes over both without ceremony:
+
+```bash
+pipx list --short                       # what you would lose
+uv tool install --force <each-one>      # --force: pipx's shims are still in ~/.local/bin
+brew uninstall pipx                     # only after verifying each tool still runs
+```
+
+`--force` is not optional. Both write executables to `~/.local/bin`, so `uv tool install` stops with
+`Executables already exist` until pipx's shims are overwritten. Verify with `<tool> --version`
+*before* uninstalling pipx, not after — the shims and the real installs live in the same directory.
+
+For conda: check `conda env list` first. If `base` is the only environment, nothing is using it and
+the cask can go. Removing it also lets you delete the `conda init` block from `.zshrc`, which is
+worth roughly 150ms on every shell you open. Note that `brew uninstall --cask miniforge` shells out
+to `sudo`, so it needs a real terminal.
+
 **Never `pip install` into the system Python.** macOS ships `/usr/bin/python3` for its own use;
 writing to it breaks OS tooling and is wiped by system updates. Recent versions refuse with
 `externally-managed-environment`, which is the OS protecting you.

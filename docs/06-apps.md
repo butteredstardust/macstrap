@@ -19,7 +19,6 @@ brew bundle --file=Brewfile.optional
 |---|---|
 | Ghostty | terminal — see `docs/04-terminal.md` |
 | Visual Studio Code | primary editor |
-| Zed | fast second editor for large files and quick edits |
 | Docker Desktop | containers — install only one Docker, see `docs/05-languages.md` |
 | Google Chrome | devtools and browser automation, not necessarily the default browser |
 
@@ -136,6 +135,24 @@ diff <(sort Brewfile) <(sort /tmp/Brewfile.current)
 `scripts/packages.sh` runs this comparison at the end of every provisioning run and reports anything
 installed but undeclared. It only reports — uninstalling something you did not ask it to is not a
 provisioning script's call.
+
+Three things make that comparison lie if you write it naively, and all three are handled:
+
+| | |
+|---|---|
+| Tapped formulae print fully qualified (`oven-sh/bun/bun`) while Brewfile lines are bare | strip the tap prefix on **both** sides, or every tapped package reads as undeclared |
+| Renamed casks appear under both tokens (`docker` *and* `docker-desktop`) | read the Caskroom and keep only real directories; the old token is a symlink |
+| Untrusted taps are omitted from `brew leaves` altogether | the report under-counts silently — see "Tap trust" in `docs/11-troubleshooting.md` |
+
+### `Brewfile.local`
+
+Gitignored by `*.local`, installed and counted alongside the tracked bundles. It exists because the
+only other way to silence the drift report is to publish the package name, and some names should not
+be published — internal tooling, an employer's tap, a personal CLI. Without it, "keep the report
+clean" and "keep the repo publishable" pull in opposite directions and the report loses.
+
+It is also the honest place to park something you intend to remove but have not verified yet: a
+commented `brew uninstall <x>` next to the line records the intent where you will see it again.
 
 The cruft this guards against is real: the machine this repo was distilled from had a pinned
 `icu4c@75` (a leaked transitive dependency), three overlapping Docker installs, and four editor AI

@@ -40,7 +40,11 @@ brew "httpie"                    # curl for humans; keep curl for scripts
 brew "node"                      # LTS-ish; see docs/05-languages.md for pinning
 brew "pnpm"
 brew "oven-sh/bun/bun"
-brew "python@3.13"
+brew "python@3.12"              # a system-wide interpreter for one-off scripts.
+                                 # Project versions come from uv, not from here,
+                                 # so this only needs to be *a* modern Python —
+                                 # not the newest. 3.12 has the widest wheel
+                                 # coverage of the versions still supported.
 brew "uv"                        # Python envs + tool installs; replaces pipx
 brew "rustup"                    # NOT `rust` — rustup manages toolchains.
                                  # Keg-only: needs $(brew --prefix)/opt/rustup/bin

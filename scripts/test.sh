@@ -10,6 +10,9 @@ set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 fails=0
+
+TMPDIR_TEST="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR_TEST"' EXIT
 fail() { warn "$*"; fails=$((fails + 1)); }
 
 # --- 1. Syntax, under the OLDEST bash we must support ---------------------
@@ -112,10 +115,14 @@ fi
 # --- 6. Docs referential integrity ----------------------------------------
 header "docs"
 missing=0
-for doc in $(grep -ohE 'docs/[0-9]{2}-[a-z-]+\.md' "$MACSTRAP_ROOT"/README.md \
-             "$MACSTRAP_ROOT"/docs/*.md "$MACSTRAP_ROOT"/scripts/*.sh 2>/dev/null | sort -u); do
+# Fed by a pipeline rather than `for doc in $(...)`: a path is one line, not one
+# word, and word splitting would break the first filename containing a space.
+grep -ohE 'docs/[0-9]{2}-[a-z-]+\.md' "$MACSTRAP_ROOT"/README.md \
+     "$MACSTRAP_ROOT"/docs/*.md "$MACSTRAP_ROOT"/scripts/*.sh 2>/dev/null \
+  | sort -u > "$TMPDIR_TEST/refs"
+while IFS= read -r doc; do
   [ -f "$MACSTRAP_ROOT/$doc" ] || { fail "referenced but missing: $doc"; missing=1; }
-done
+done < "$TMPDIR_TEST/refs"
 [ "$missing" = "0" ] && ok "all doc cross-references resolve"
 
 printf '\n'

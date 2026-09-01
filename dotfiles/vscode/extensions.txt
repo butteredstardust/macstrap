@@ -3,8 +3,11 @@
 # Install:  scripts/editors.sh
 # Refresh:  code --list-extensions > dotfiles/vscode/extensions.txt
 #
-# Kept to things that earn their startup cost. Notably absent: multiple
-# overlapping AI assistants — pick one, they fight over inline suggestions.
+# Kept to things that earn their startup cost. Notably absent: two extensions
+# doing the same job. Inline AI suggestions are the worst case — several
+# providers race for the same ghost-text slot and you get whichever won — but
+# the rule is general: two Docker extensions means two container views and two
+# sets of commands in the palette.
 
 # --- Core ---------------------------------------------------------------
 esbenp.prettier-vscode
@@ -23,10 +26,22 @@ ms-python.debugpy
 charliermarsh.ruff
 rust-lang.rust-analyzer
 tauri-apps.tauri-vscode
+ms-vscode.powershell        # scripting the Windows side; see README "Windows"
+
+# --- File formats -------------------------------------------------------
+irongeek.vscode-env         # .env highlighting; catches an unquoted value early
+repreng.csv                 # column-aligned CSV instead of a wall of commas
 
 # --- Containers & remote ------------------------------------------------
 ms-azuretools.vscode-containers
 ms-vscode-remote.remote-containers
+docker.docker               # the official one. NOT ms-azuretools.vscode-docker,
+                            # which it supersedes — installing both gives two
+                            # container panels and duplicate palette commands.
 
-# --- AI (pick one) ------------------------------------------------------
+# --- AI -----------------------------------------------------------------
+# These are agents you invoke, not inline-completion providers, so they do not
+# fight the way Copilot/Gemini/Codeium do. Adding a fourth is how that starts.
 anthropic.claude-code
+kilocode.kilo-code
+sst-dev.opencode
