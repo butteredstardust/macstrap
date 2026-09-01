@@ -39,18 +39,37 @@ src = os.path.join(os.environ["MACSTRAP_ROOT"], "dotfiles/vscode/settings.json")
 
 
 def load(path):
-    """VS Code writes JSONC. Strip line comments and trailing commas."""
+    """VS Code writes JSONC: line comments, block comments, trailing commas.
+
+    The comment patterns are deliberately anchored to the start of a line.
+    Stripping `//` anywhere would eat the rest of any line containing a URL —
+    and this file holds URLs (an extension's endpoint, a proxy address), so an
+    unanchored pattern would silently corrupt real settings rather than fail
+    loudly. Comments inside a value are left alone; JSON has no way to express
+    one, so they cannot occur there.
+    """
     if not os.path.exists(path):
         return collections.OrderedDict()
     text = open(path).read()
     text = re.sub(r"^\s*//.*$", "", text, flags=re.M)
+    text = re.sub(r"^\s*/\*.*?\*/", "", text, flags=re.M | re.S)
     text = re.sub(r",(\s*[}\]])", r"\1", text)
     if not text.strip():
         return collections.OrderedDict()
     return json.loads(text, object_pairs_hook=collections.OrderedDict)
 
 
-merged = load(dst)
+try:
+    merged = load(dst)
+except ValueError as exc:
+    # Refuse rather than guess. This script runs under `set -e`, so raising
+    # would kill the whole editors step; and whatever is unparseable here is a
+    # file the user edited by hand, which makes overwriting it the worst of the
+    # available options. The backup_copy above is already in place.
+    print("  !! %s is not valid JSON/JSONC: %s" % (dst, exc))
+    print("  !! settings left untouched. Fix the file, then re-run scripts/editors.sh")
+    raise SystemExit(0)
+
 added = []
 for key, value in load(src).items():
     if key not in merged:

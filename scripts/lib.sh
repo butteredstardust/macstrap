@@ -54,8 +54,6 @@ confirm() {
 }
 
 # --- Filesystem -----------------------------------------------------------
-# backup <path> — move an existing file/dir aside with a timestamp suffix.
-# Uses BSD `date` syntax; these scripts are macOS-only by design.
 # backup <path>            — move the file aside. Use before REPLACING it.
 # backup_copy <path>       — copy it aside. Use before EDITING IT IN PLACE.
 #
@@ -151,7 +149,26 @@ brew_prefix_expected() {
 activate_homebrew() {
   have brew && return 0
   local prefix
-  prefix="$(brew_prefix)" || return 1
+  if ! prefix="$(brew_prefix)"; then
+    # A dry run on a genuinely fresh Mac reaches here, and it is not an error.
+    # homebrew.sh only *printed* what it would do, so no brew binary exists —
+    # yet this is the one machine where previewing the rest of the run matters.
+    # Returning 1 here made packages.sh `die`, which bootstrap.sh treats as
+    # fatal, so `./bootstrap.sh --dry-run` — the first command the README
+    # suggests — aborted after the Homebrew step and never previewed dotfiles,
+    # languages or editors. Invisible on a provisioned machine, where `have
+    # brew` returns at the top.
+    #
+    # Succeeding is safe: under DRY_RUN every brew invocation goes through
+    # `run`, which prints instead of executing. The callers that shell out to
+    # brew directly (the Caskroom scan and the drift report in packages.sh)
+    # are already inside `if [ "$DRY_RUN" != "1" ]` blocks.
+    if [ "${DRY_RUN:-0}" = "1" ]; then
+      skip "Homebrew absent; previewing as though it had just been installed"
+      return 0
+    fi
+    return 1
+  fi
   eval "$("$prefix/bin/brew" shellenv)"
 
   # rustup is keg-only (it conflicts with the `rust` formula), so Homebrew

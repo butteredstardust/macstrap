@@ -112,7 +112,48 @@ else
   ok "no hardcoded home paths"
 fi
 
-# --- 6. Docs referential integrity ----------------------------------------
+# --- 6. Fresh-machine dry run ---------------------------------------------
+# The one behavioural test here, and it earns its runtime: every serious bug
+# this repo has had was invisible on a provisioned machine and only appeared
+# where nothing was installed yet. Static checks cannot catch those.
+#
+# Simulate it by copying the repo and stubbing brew_prefix() to fail, which is
+# what a Mac with no Homebrew looks like to these scripts. Then assert that
+# --dry-run previews ALL of it. It used to die at the packages step, so
+# `./bootstrap.sh --dry-run` — the first command the README suggests — showed a
+# new user two steps out of six and exited 1.
+#
+# Nothing is installed or modified: DRY_RUN=1 routes every action through
+# `run`, which prints.
+header "fresh-machine dry run"
+fresh="$TMPDIR_TEST/fresh"
+cp -R "$MACSTRAP_ROOT" "$fresh" 2>/dev/null
+rm -rf "$fresh/.git"
+
+# Insert the stub as the first line of the function body.
+awk '/^brew_prefix\(\) \{$/ { print; print "  return 1  # test stub: no Homebrew"; next } { print }' \
+  "$fresh/scripts/lib.sh" > "$fresh/scripts/lib.sh.tmp" && mv "$fresh/scripts/lib.sh.tmp" "$fresh/scripts/lib.sh"
+
+# `env -u BASH_ENV` matters: if BASH_ENV points at a profile that appends
+# Homebrew to PATH, `have brew` succeeds and the whole simulation is void —
+# the run passes while testing nothing.
+if env -u BASH_ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+     "$fresh/bootstrap.sh" --dry-run --with-optional > "$TMPDIR_TEST/fresh.log" 2>&1; then
+  steps_seen=0
+  for step in Preflight Homebrew Packages Dotfiles "Language toolchains" Editors; do
+    grep -qx "$step" "$TMPDIR_TEST/fresh.log" && steps_seen=$((steps_seen + 1))
+  done
+  if [ "$steps_seen" -eq 6 ]; then
+    ok "dry run previews all 6 steps with no Homebrew present"
+  else
+    fail "dry run exited 0 but only previewed $steps_seen/6 steps"
+  fi
+else
+  fail "dry run fails on a machine without Homebrew (exit $?)"
+  tail -5 "$TMPDIR_TEST/fresh.log" | sed 's/^/       /'
+fi
+
+# --- 7. Docs referential integrity ----------------------------------------
 header "docs"
 missing=0
 # Fed by a pipeline rather than `for doc in $(...)`: a path is one line, not one

@@ -43,7 +43,7 @@ Requires macOS 14+ on Apple Silicon or Intel. Nothing is installed as root.
 ./bootstrap.sh --list
 
 scripts/doctor.sh                     # verify the result; changes nothing
-scripts/test.sh                       # static checks: bash 3.2, shellcheck, BSD, privacy
+scripts/test.sh                       # checks the repo itself: lint, privacy, fresh-machine dry run
 ```
 
 Every step is idempotent. Running twice is safe; the second run is mostly no-ops.
@@ -67,7 +67,7 @@ scripts/
   editors.sh              VS Code settings + extensions, Claude Code
   macos-defaults.sh       system preferences (opt-in)
   doctor.sh               read-only health check
-  test.sh                 static checks on the repo itself
+  test.sh                 lint, privacy scan, simulated fresh-machine run
 dotfiles/                 the actual config, symlinked into ~
 docs/                     why each decision was made
 ```
