@@ -45,13 +45,84 @@ brew bundle --file=Brewfile.optional
 
 ## Mac App Store
 
-`mas` is in the core Brewfile so `brew bundle dump` can capture App Store apps. It cannot install an
-app you have never purchased under the signed-in Apple ID — App Store apps stay out of the tracked
-Brewfiles for that reason. If you want them, add them to a local `Brewfile.local`:
+Some apps have no cask and only ship through the App Store. `mas` handles those, and the entries
+live at the bottom of `Brewfile.optional`.
 
 ```
-mas "Xcode", id: 497799835
+mas "Amphetamine", id: 937984704
 ```
+
+**The catch:** you must be signed in to the App Store, and `mas` is the least reliable installer
+here. Current `brew bundle` tries `mas install` and falls back to `mas get`, so a free app you have
+never "bought" can usually still be acquired — but sign-in state, region availability, age rating
+and App Store outages all still fail, and `brew bundle` exits non-zero for the whole file when one
+entry does.
+
+That is why the `mas` entries live in `Brewfile.optional`, and why `scripts/packages.sh` treats a
+failure of that bundle as non-fatal. An App Store hiccup must not stop your dotfiles, toolchains and
+editors from being set up — those steps all run after packages.
+
+Find the id of an app you already have:
+
+```bash
+mdls -name kMDItemAppStoreAdamID -raw "/Applications/Amphetamine.app"
+```
+
+`mas` cannot install Safari extensions independently either; they arrive with their container app
+(Hush, Dark Reader and uBlock Origin Lite are each a full App Store app).
+
+## Apps installed outside Homebrew
+
+Casks do not cover everything, and it is easy to accumulate hand-downloaded `.app` bundles that no
+manifest knows about. Audit them:
+
+```bash
+brew info --cask --json=v2 $(brew list --cask | tr '\n' ' ') \
+  | jq -r '.casks[].artifacts[]?.app[]?' | sort -u > /tmp/brew-apps
+/bin/ls -1 /Applications ~/Applications 2>/dev/null | grep '\.app$' | sort -u > /tmp/all-apps
+comm -23 /tmp/all-apps /tmp/brew-apps
+```
+
+Use `/bin/ls`, not `ls` — the alias in `.zshrc` maps it to `eza --long`, which returns a table
+rather than bare names and silently breaks the diff.
+
+For each result, decide:
+
+| Result | Action |
+|---|---|
+| a cask exists | migrate it — see below. `--force` is a reinstall, not an adoption |
+| App Store only | add a `mas` line |
+| self-updating (Docker, Claude, browsers) | cask it for the record; let it update itself |
+| something you built yourself | leave it out of the Brewfiles entirely |
+| you don't recognise it | that is the point of the audit |
+
+### Migrating a hand-installed app to a cask
+
+There is no "adopt" operation. `brew install --cask --force <name>` **overwrites the app bundle** with
+Homebrew's copy — it does not bless the one already there. That is usually fine, because app *data*
+lives in `~/Library/Application Support` and `~/Library/Preferences`, not in the bundle. But do it
+deliberately:
+
+```bash
+brew info --cask <name>                    # check version and whether it auto-updates
+# quit the app first — replacing a running bundle corrupts its state
+brew install --cask --force <name>
+brew list --cask --versions <name>         # confirm a receipt now exists
+```
+
+For App Store installs being switched to a cask, delete the MAS copy first; otherwise you have two
+update mechanisms fighting over one bundle. **Pick one source per app and record which.** Hush and
+The Unarchiver exist both ways, so they are exactly where this goes wrong.
+
+### Self-updating apps
+
+Claude, Tailscale and The Unarchiver declare `auto_updates true`. Homebrew skips these during a
+normal `brew upgrade` — it compares bundle metadata and will not push its recorded version over a
+newer installed one, so the "cask downgrades my app" worry is unfounded *unless* you use
+`brew upgrade --greedy`, which explicitly overrides that behaviour.
+
+Treat their cask entries as a **record of what belongs on the machine and where it came from**,
+not as the thing that keeps them current. Avoid `--greedy` for them.
 
 ## Keeping the Brewfiles honest
 
@@ -67,5 +138,5 @@ installed but undeclared. It only reports — uninstalling something you did not
 provisioning script's call.
 
 The cruft this guards against is real: the machine this repo was distilled from had a pinned
-`icu4c@75` (a leaked transitive dependency), three overlapping Docker installs, and four AI CLIs
-where one was in use.
+`icu4c@75` (a leaked transitive dependency), three overlapping Docker installs, and four editor AI
+extensions competing for one inline-completion slot.

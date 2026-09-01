@@ -59,9 +59,20 @@ confirm() {
 backup() {
   local target="$1"
   [ -e "$target" ] || [ -L "$target" ] || return 0
-  local stamp; stamp="$(date +%Y%m%d-%H%M%S)"
-  warn "backing up $target -> $target.bak-$stamp"
-  run mv "$target" "$target.bak-$stamp"
+
+  # Second resolution is not enough: two links replaced in the same second
+  # would collide, and `mv` onto an existing directory nests instead of
+  # failing. Find a free name rather than trusting the timestamp.
+  local stamp dest n=0
+  stamp="$(date +%Y%m%d-%H%M%S)"
+  dest="$target.bak-$stamp"
+  while [ -e "$dest" ] || [ -L "$dest" ]; do
+    n=$((n + 1))
+    dest="$target.bak-$stamp.$n"
+  done
+
+  warn "backing up $target -> $dest"
+  run mv "$target" "$dest"
 }
 
 # link <source-in-repo> <destination> — idempotent symlink.
@@ -100,4 +111,31 @@ brew_prefix() {
   elif [ -x /usr/local/bin/brew ]; then echo /usr/local
   else return 1
   fi
+}
+
+# The expected prefix for this architecture, whether or not brew exists yet.
+# Needed by --dry-run on a machine that has no Homebrew: the real prefix cannot
+# be probed, but the actions that depend on it still have to be printable.
+brew_prefix_expected() {
+  [ "$(uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local
+}
+
+# Put Homebrew on PATH for the current process.
+#
+# bootstrap.sh runs each step in its own `bash` child, so the `brew shellenv`
+# evaluated inside homebrew.sh dies with that child. On an already-provisioned
+# machine this is invisible — brew is on PATH from ~/.zprofile — but on a
+# genuinely fresh Mac every step after homebrew.sh would inherit the original
+# pre-Homebrew PATH and fail. Every dependent script calls this.
+activate_homebrew() {
+  have brew && return 0
+  local prefix
+  prefix="$(brew_prefix)" || return 1
+  eval "$("$prefix/bin/brew" shellenv)"
+
+  # rustup is keg-only (it conflicts with the `rust` formula), so Homebrew
+  # never symlinks it into bin/. Without this, `cargo` and `rustup` are absent
+  # even though the formula installed fine.
+  [ -d "$prefix/opt/rustup/bin" ] && export PATH="$prefix/opt/rustup/bin:$PATH"
+  return 0
 }

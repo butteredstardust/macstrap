@@ -20,9 +20,23 @@ rustup default stable
 rustup component add rust-analyzer clippy rustfmt
 ```
 
-**Gotcha:** installing the `rustup` formula puts `cargo` on `PATH` but installs no toolchain. Every
-invocation then fails with `no default toolchain configured` until you run `rustup default stable`.
-`scripts/languages.sh` does this.
+**Two gotchas, and each one alone leaves you with a broken Rust:**
+
+1. **The formula is keg-only.** It conflicts with the `rust` formula, so Homebrew never symlinks it
+   into `bin/`. After a successful install, `rustup` and `cargo` are still `command not found`. The
+   binaries are at `$(brew --prefix)/opt/rustup/bin`, which `.zshrc` adds to `PATH`:
+
+   ```zsh
+   path_prepend /opt/homebrew/opt/rustup/bin
+   ```
+
+   Hardcoded rather than calling `brew --prefix rustup`, which would add ~100ms to every shell start.
+
+2. **It installs the manager, not a toolchain.** Once found, every `cargo` invocation fails with
+   `no default toolchain configured` until you run `rustup default stable`.
+
+`scripts/languages.sh` handles both, and warns explicitly if `rustup` is missing from `PATH` rather
+than silently skipping the step.
 
 `~/.cargo/env` is sourced from `.zshenv`, not `.zshrc`, so editors and build scripts that never see
 `.zshrc` still find `cargo`.
@@ -37,8 +51,18 @@ cargo clippy -- -D warnings
 
 ```bash
 brew install node pnpm
-corepack enable      # honours "packageManager" in package.json
 ```
+
+**Corepack is no longer bundled.** It is what honours the `packageManager` field in `package.json`,
+but Node unbundled it in v25 and Homebrew ships v26 — so `corepack enable` now fails with
+`command not found`, and per-project package-manager pinning is silently not enforced. If you rely
+on that pin:
+
+```bash
+npm install -g corepack && corepack enable
+```
+
+`scripts/languages.sh` reports which of the two states you are in rather than assuming.
 
 | Manager | Use |
 |---|---|

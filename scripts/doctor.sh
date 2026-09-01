@@ -7,6 +7,10 @@ set -euo pipefail
 
 header "Doctor"
 
+# Match what the provisioning scripts see, not what your interactive shell
+# happens to have — otherwise doctor passes on a machine where bootstrap fails.
+activate_homebrew || warn "Homebrew not found"
+
 failures=0
 check() {  # check <label> <command...>
   local label="$1"; shift
@@ -59,7 +63,17 @@ else
 fi
 
 # --- Fonts ----------------------------------------------------------------
-if ls "$HOME/Library/Fonts" /Library/Fonts 2>/dev/null | grep -qi "jetbrainsmono.*nerd"; then
+# Globbed rather than `ls | grep`: filenames with spaces are the norm for fonts,
+# and `ls` is aliased to eza in this very setup's .zshrc.
+font_found=0
+for dir in "$HOME/Library/Fonts" /Library/Fonts; do
+  [ -d "$dir" ] || continue
+  for f in "$dir"/*JetBrainsMono*; do
+    [ -e "$f" ] && { font_found=1; break 2; }
+  done
+done
+
+if [ "$font_found" = "1" ]; then
   ok "JetBrainsMono Nerd Font installed"
 else
   warn "JetBrainsMono Nerd Font missing — ghostty and starship glyphs will render as boxes"

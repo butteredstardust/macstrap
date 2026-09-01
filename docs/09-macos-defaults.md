@@ -77,7 +77,7 @@ a document.
 | Touch ID for `sudo` | edits `/etc/pam.d/sudo_local`, a system file; wrong content can lock you out |
 | Login items | entirely personal |
 | Hostname | identifying. Set it yourself: `sudo scutil --set ComputerName <name>` |
-| Firewall | on by default in recent macOS; verify rather than blindly re-set |
+| Firewall | not reliably on by default — check and enable it: **System Settings → Network → Firewall** |
 
 ## Reverting the whole script
 

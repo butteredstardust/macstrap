@@ -11,6 +11,7 @@
 
 # --- Taps -----------------------------------------------------------------
 tap "oven-sh/bun"
+tap "anomalyco/tap"
 
 # --- Shell ----------------------------------------------------------------
 brew "zsh-autosuggestions"       # ghost-text completion from history
@@ -41,8 +42,22 @@ brew "pnpm"
 brew "oven-sh/bun/bun"
 brew "python@3.13"
 brew "uv"                        # Python envs + tool installs; replaces pipx
-brew "rustup"                    # NOT `rust` — rustup manages toolchains
+brew "rustup"                    # NOT `rust` — rustup manages toolchains.
+                                 # Keg-only: needs $(brew --prefix)/opt/rustup/bin
+                                 # on PATH, and `rustup default stable` after.
+                                 # .zshrc and scripts/languages.sh handle both.
+
+# --- AI coding agents -----------------------------------------------------
+# Terminal agents, used daily. These coexist fine: each is a separate binary
+# you invoke deliberately, unlike editor extensions, which fight over the same
+# inline-completion slot (see docs/07-editors.md).
+#
+# Claude Code is deliberately absent — it ships its own self-updating installer
+# rather than a formula. scripts/editors.sh handles it.
+brew "anomalyco/tap/opencode"
+cask "codex"                     # OpenAI Codex CLI; ships as a cask, not a formula
 
 # --- Maintenance ----------------------------------------------------------
 brew "topgrade"                  # one command to update everything
 brew "mas"                       # Mac App Store CLI, for `brew bundle dump`
+brew "shellcheck"                # required by scripts/test.sh

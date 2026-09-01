@@ -20,11 +20,27 @@ MACSTRAP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export MACSTRAP_ROOT
 . "$MACSTRAP_ROOT/scripts/lib.sh"
 
+# Guards run before any argument is parsed, so `sudo ./bootstrap.sh --only
+# dotfiles` cannot slip past them by skipping the preflight step.
+require_macos
+refuse_root
+
 # Step name -> script. Order matters: each depends on the ones before it.
 STEPS="preflight homebrew packages dotfiles languages editors"
 OPTIONAL_STEPS="macos-defaults"
 
-usage() { sed -n '2,20p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'; exit 0; }
+# Print only the comment block at the top of this file, stopping at the first
+# non-comment line — so --help never spills implementation into the output.
+usage() {
+  while IFS= read -r line; do
+    case "$line" in
+      '#!'*) continue ;;
+      '#'*)  printf '%s\n' "${line#\#}" | sed 's/^ //' ;;
+      *)     break ;;
+    esac
+  done < "$0"
+  exit 0
+}
 
 only=""
 with_macos_defaults=0
@@ -36,7 +52,11 @@ while [ $# -gt 0 ]; do
     -y|--yes)              export ASSUME_YES=1 ;;
     --with-optional)       export WITH_OPTIONAL=1 ;;
     --with-macos-defaults) with_macos_defaults=1 ;;
-    --only)                only="${2:-}"; shift ;;
+    # Validate before shifting: `--only` as the last argument would otherwise
+    # leave $# at 0, and the second `shift` then fails under `set -e`, exiting
+    # 1 with no message at all.
+    --only)                [ $# -ge 2 ] || die "--only requires a value (try --list)"
+                           only="$2"; shift ;;
     --only=*)              only="${1#*=}" ;;
     --list)                echo "steps: $STEPS"; echo "optional: $OPTIONAL_STEPS"; exit 0 ;;
     -h|--help)             usage ;;

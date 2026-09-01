@@ -29,5 +29,14 @@ cask "swift-quit"       # ⌘W on the last window quits the app
 # --- Browsers -------------------------------------------------------------
 cask "google-chrome"    # kept for devtools/automation, not as default browser
 
+# --- Networking -----------------------------------------------------------
+# `tailscale-app` is the GUI client. The `tailscale` FORMULA is the headless
+# CLI/daemon for servers — installing both on a desktop gives you two daemons
+# competing for the same interface.
+cask "tailscale-app"
+
 # --- Security -------------------------------------------------------------
 cask "enpass"           # password manager (offline vault)
+
+# --- AI desktop -----------------------------------------------------------
+cask "claude"           # Claude Desktop; the CLI is installed separately

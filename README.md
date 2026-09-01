@@ -43,6 +43,7 @@ Requires macOS 14+ on Apple Silicon or Intel. Nothing is installed as root.
 ./bootstrap.sh --list
 
 scripts/doctor.sh                     # verify the result; changes nothing
+scripts/test.sh                       # static checks: bash 3.2, shellcheck, BSD, privacy
 ```
 
 Every step is idempotent. Running twice is safe; the second run is mostly no-ops.
@@ -66,6 +67,7 @@ scripts/
   editors.sh              VS Code settings + extensions, Zed
   macos-defaults.sh       system preferences (opt-in)
   doctor.sh               read-only health check
+  test.sh                 static checks on the repo itself
 dotfiles/                 the actual config, symlinked into ~
 docs/                     why each decision was made
 ```
@@ -110,10 +112,14 @@ Every `defaults write` undoes with one `defaults delete`.
 Ghostty silently ignores your first `window-padding-x` — those cost hours to rediscover.
 
 **Cruft is not configuration.** This was distilled from a machine with a leaked transitive
-dependency pinned in `brew leaves`, three overlapping Docker installs, four AI CLIs where one was in
-use, a `conda init` block costing 150ms of every shell, and a terminal asking for a font that was
-never installed. None of it was a decision; all of it was sediment. Every entry here had to justify
-itself.
+dependency pinned in `brew leaves`, three overlapping Docker installs, four editor AI extensions
+racing for the same inline-completion slot, a `conda init` block costing 150ms of every shell, and a
+terminal asking for a font that was never installed. None of it was a decision; all of it was
+sediment. Every entry here had to justify itself.
+
+The inverse also applies: several terminal AI agents *are* kept, because separate binaries you
+invoke deliberately do not conflict the way editor extensions do. Duplication is only cruft when the
+copies compete.
 
 ---
 

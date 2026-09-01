@@ -24,10 +24,26 @@ if xcode-select -p >/dev/null 2>&1; then
   ok "Xcode Command Line Tools present ($(xcode-select -p))"
 else
   log "Installing Xcode Command Line Tools (a GUI dialog will open)"
+  warn "--yes cannot skip this: the dialog and its admin prompt are Apple's, not ours"
   run xcode-select --install || true
+
   if [ "$DRY_RUN" != "1" ]; then
-    printf '  waiting for the installer to finish'
-    until xcode-select -p >/dev/null 2>&1; do printf '.'; sleep 10; done
+    # Bounded wait. Cancelling the dialog, losing the network, or an installer
+    # error would otherwise leave this polling forever with no way to tell the
+    # difference between "still downloading" and "never going to finish".
+    printf '  waiting for the installer to finish (up to 30 min)'
+    deadline=$(( $(date +%s) + 1800 ))
+    until xcode-select -p >/dev/null 2>&1; do
+      if [ "$(date +%s)" -ge "$deadline" ]; then
+        printf '\n'
+        die "Command Line Tools did not install within 30 minutes.
+     Install them manually, then re-run:
+       xcode-select --install
+     Or download 'Command Line Tools for Xcode' from https://developer.apple.com/download/all/"
+      fi
+      printf '.'
+      sleep 10
+    done
     printf '\n'
     ok "Command Line Tools installed"
   fi

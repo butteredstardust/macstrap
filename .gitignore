@@ -14,5 +14,11 @@ secrets/
 .idea/
 *.swp
 
+# Tooling artefacts. These are the sneaky ones: language servers and agent
+# tooling drop logs here that embed the absolute /Users/<name>/ path.
+*.log
+.DS_Store
+Brewfile.lock.json
+
 # Claude Code per-project local settings
 **/.claude/settings.local.json

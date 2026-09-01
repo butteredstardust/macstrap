@@ -20,6 +20,7 @@ github.vscode-github-actions
 ms-python.python
 ms-python.vscode-pylance
 ms-python.debugpy
+charliermarsh.ruff
 rust-lang.rust-analyzer
 tauri-apps.tauri-vscode
 

@@ -35,3 +35,33 @@ cask "steam"
 cask "cyberduck"                 # SFTP/S3 browser
 cask "textmate"                  # fast plain-text editor
 cask "corretto"                  # JDK, only if you touch Java
+# Also on the App Store. If you already have the MAS copy, delete it before
+# installing this one rather than running both — see docs/06-apps.md.
+cask "the-unarchiver"            # archive formats macOS will not open
+cask "raspberry-pi-imager"       # flash SD cards with OS images
+
+# --- Mac App Store --------------------------------------------------------
+# Requires being signed in to the App Store. `brew bundle` exits non-zero for
+# the WHOLE file if any single entry fails (region, sign-in, age rating, App
+# Store outage), which is why these live here and why scripts/packages.sh
+# treats a failure of this bundle as non-fatal.
+#
+# Find an installed app's id with:
+#   mdls -name kMDItemAppStoreAdamID -raw "/Applications/Name.app"
+mas "Amphetamine", id: 937984704            # keep the Mac awake, per-trigger rules
+
+# Hush also exists as a cask. Pick ONE source per app — two update mechanisms
+# on one bundle is how you end up with a mystery downgrade.
+mas "Hush", id: 1544743900                  # Safari cookie-banner blocker
+mas "Dark Reader for Safari", id: 1438243180
+mas "uBlock Origin Lite", id: 6745342698
+mas "Infuse", id: 1136220934                # video player; no cask exists
+mas "Bitdefender Virus Scanner", id: 500154009
+
+# NOTE: Hush, Dark Reader and uBlock Origin Lite are Safari EXTENSIONS shipped
+# inside a container app. Installing the app does not enable the extension —
+# Apple requires that by hand, on purpose. After install:
+#   Safari > Settings > Extensions  -> tick each one
+#   then grant per-site access, and repeat for any additional Safari profile
+#   and for Private Browsing if you want it there.
+# There is no scriptable way to do this; it is a deliberate user-consent gate.

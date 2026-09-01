@@ -59,7 +59,13 @@
 
   // --- Languages ----------------------------------------------------------
   "python.analysis.typeCheckingMode": "standard",
-  "[python]": { "editor.defaultFormatter": "ms-python.python" },
+  // Ruff, not ms-python.python — the Python extension stopped providing a
+  // formatter, so naming it here makes format-on-save fail with "configured
+  // formatter is not available". Matches the `ruff` installed by uv.
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": { "source.organizeImports.ruff": "explicit" }
+  },
   "[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" },
   "[markdown]": { "editor.wordWrap": "on", "editor.formatOnSave": false }
 }

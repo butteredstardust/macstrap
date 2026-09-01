@@ -7,6 +7,12 @@ set -euo pipefail
 
 header "Dotfiles"
 
+# Guards repeated here, not just in preflight: this script is executable on its
+# own and via `--only`, and writing $HOME dotfiles as root would create files
+# the real user cannot edit afterwards.
+require_macos
+refuse_root
+
 # --- Shell ----------------------------------------------------------------
 link dotfiles/zsh/zshrc   "$HOME/.zshrc"
 link dotfiles/zsh/zshenv  "$HOME/.zshenv"
@@ -31,6 +37,7 @@ link dotfiles/git/ignore "$HOME/.config/git/ignore"
 # ~/.gitconfig is COPIED, not linked: it carries your name and email, and this
 # repo is public. Regenerate it by deleting ~/.gitconfig and re-running.
 if [ -f "$HOME/.gitconfig" ] && grep -q '__GIT_NAME__' "$HOME/.gitconfig" 2>/dev/null; then
+  # shellcheck disable=SC2088  # display text, not a path to be expanded
   warn "~/.gitconfig still contains template placeholders; regenerating"
   backup "$HOME/.gitconfig"
 fi
@@ -52,11 +59,19 @@ if [ ! -f "$HOME/.gitconfig" ]; then
   elif [ "$DRY_RUN" = "1" ]; then
     skip "would render ~/.gitconfig from template"
   else
-    sed -e "s|__GIT_NAME__|$git_name|" -e "s|__GIT_EMAIL__|$git_email|" \
+    # Copy the template with the placeholders stripped, then let git itself
+    # write the identity. Interpolating the values into a sed replacement would
+    # break on the characters a real name legitimately contains: `&` expands to
+    # the whole match, and `\` and the `|` delimiter corrupt the expression.
+    # -E, not BRE: BSD grep has no `\|` alternation, same trap as BSD sed.
+    grep -vE '__GIT_NAME__|__GIT_EMAIL__' \
       "$MACSTRAP_ROOT/dotfiles/git/gitconfig.template" > "$HOME/.gitconfig"
+    git config --file "$HOME/.gitconfig" user.name  "$git_name"
+    git config --file "$HOME/.gitconfig" user.email "$git_email"
     ok "wrote ~/.gitconfig for $git_name <$git_email>"
   fi
 else
+  # shellcheck disable=SC2088  # display text, not a path to be expanded
   skip "~/.gitconfig exists (delete it to regenerate from the template)"
 fi
 

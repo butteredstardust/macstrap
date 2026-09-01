@@ -24,23 +24,34 @@ else
         "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
   fi
-  prefix="$(brew_prefix)" || die "Homebrew install did not produce a brew binary"
-  ok "Homebrew installed at $prefix"
+  if [ "$DRY_RUN" = "1" ]; then
+    # Nothing was installed, so there is no binary to probe. Use the
+    # architecture's expected prefix so the remaining steps stay printable
+    # instead of dying on a fresh machine.
+    prefix="$(brew_prefix_expected)"
+  else
+    prefix="$(brew_prefix)" || die "Homebrew install did not produce a brew binary"
+    ok "Homebrew installed at $prefix"
+  fi
 fi
 
-# Make brew usable for the remainder of this script run. .zprofile does the
-# same thing for future login shells, but that file is not sourced here.
+# Make brew usable for the remainder of THIS script. Note that bootstrap.sh
+# runs each step in its own child process, so this does not reach the next
+# step — every dependent script calls activate_homebrew itself.
 if [ "$DRY_RUN" != "1" ]; then
-  eval "$("$prefix/bin/brew" shellenv)"
+  activate_homebrew || die "brew installed but not activatable at $prefix"
+
+  # Analytics are on by default and phone home per command.
+  if [ "$(brew analytics 2>/dev/null | head -1)" != "InfluxDB analytics are disabled." ]; then
+    log "Disabling Homebrew analytics"
+    brew analytics off
+  fi
+
+  log "Updating formula definitions"
+  brew update
+
+  ok "Homebrew ready ($(brew --version 2>/dev/null | head -1))"
+else
+  skip "would disable analytics and run: brew update"
+  ok "Homebrew step complete (dry run, prefix $prefix)"
 fi
-
-# Analytics are on by default and phone home per command.
-if [ "$(brew analytics 2>/dev/null | head -1)" != "InfluxDB analytics are disabled." ]; then
-  log "Disabling Homebrew analytics"
-  run brew analytics off
-fi
-
-log "Updating formula definitions"
-run brew update
-
-ok "Homebrew ready ($(brew --version 2>/dev/null | head -1))"

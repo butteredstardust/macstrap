@@ -9,10 +9,17 @@ set -euo pipefail
 
 header "Language toolchains"
 
+activate_homebrew || warn "Homebrew not found; only tools already on PATH will be configured"
+
 # --- Rust -----------------------------------------------------------------
-# The `rustup` formula installs the manager only; it does not install a
-# toolchain until you ask. Skipping this step leaves `cargo` on PATH but every
-# invocation failing with "no default toolchain".
+# Two separate traps here, and hitting either leaves you with a broken Rust:
+#
+#   1. The formula is KEG-ONLY (it conflicts with the `rust` formula), so
+#      Homebrew never symlinks it into bin/. `rustup` and `cargo` are simply
+#      absent from PATH until $(brew --prefix rustup)/bin is added.
+#      activate_homebrew does that for this run; .zshrc does it permanently.
+#   2. Even once found, the formula installs the MANAGER only — no toolchain.
+#      Every cargo invocation then fails with "no default toolchain configured".
 if have rustup; then
   if rustup show active-toolchain >/dev/null 2>&1; then
     ok "rust: $(rustc --version 2>/dev/null || echo 'toolchain installed')"
@@ -22,15 +29,24 @@ if have rustup; then
     run rustup component add rust-analyzer clippy rustfmt
   fi
 else
-  skip "rustup not installed (it is in the core Brewfile)"
+  warn "rustup not on PATH — it is keg-only; expected at $(brew_prefix_expected)/opt/rustup/bin"
 fi
 
 # --- Node -----------------------------------------------------------------
 if have node; then
   ok "node $(node --version), pnpm $(pnpm --version 2>/dev/null || echo 'missing')"
-  # corepack pins the package manager per project via package.json's
-  # "packageManager" field, which beats hoping everyone has the same pnpm.
-  have corepack && run corepack enable || true
+
+  # Corepack is what honours package.json's "packageManager" field, pinning the
+  # package manager per project. Node stopped bundling it in v25, and Homebrew
+  # now ships v26 — so on a current machine it is simply absent and the pin is
+  # silently not enforced. Install it explicitly if you want that guarantee.
+  if have corepack; then
+    run corepack enable
+    ok "corepack enabled — \"packageManager\" pins are honoured"
+  else
+    skip "corepack absent (unbundled from Node 25+); \"packageManager\" pins are NOT enforced"
+    skip "  to enable: npm install -g corepack && corepack enable"
+  fi
 else
   skip "node not installed"
 fi
