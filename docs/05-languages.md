@@ -6,7 +6,7 @@ is something you invoke outside a project directory. Everything else is pinned i
 | Language | Manager | Project pin |
 |---|---|---|
 | Rust | `rustup` | `rust-toolchain.toml` |
-| Node | Homebrew `node` + `corepack` | `.nvmrc`, `packageManager` in `package.json` |
+| Node | Homebrew `node` + `pnpm` | `packageManager` in `package.json` — recorded, not enforced (see below) |
 | Python | `uv` | `pyproject.toml` + `uv.lock` |
 
 ## Rust
@@ -68,8 +68,10 @@ rm ~/.cargo/bin/*           # these are only rustup's shims
 Keep `~/.rustup` (the toolchains, ~1.4GB — deleting it means re-downloading) and `~/.cargo/registry`
 (the dependency cache). Do **not** run `rustup self uninstall`: it removes both.
 
-`~/.cargo/bin` stays on `PATH` because it is still where `cargo install` writes — but **appended**,
-never prepended, so a shim that reappears there can never outrank the toolchain Homebrew manages.
+`~/.cargo/bin` stays on `PATH` because it is still where `cargo install` writes. `.zshenv` does more
+than append missing entries: it removes every occurrence of both Rust directories, then puts the
+Homebrew rustup directory first and `~/.cargo/bin` last. Merely appending the latter cannot fix a
+bad order inherited from a parent process.
 
 ```bash
 rustup update
@@ -83,16 +85,31 @@ cargo clippy -- -D warnings
 brew install node pnpm
 ```
 
-**Corepack is no longer bundled.** It is what honours the `packageManager` field in `package.json`,
-but Node unbundled it in v25 and Homebrew ships v26 — so `corepack enable` now fails with
-`command not found`, and per-project package-manager pinning is silently not enforced. If you rely
-on that pin:
+**Exactly one thing may own `pnpm` and `pnpx`.** Homebrew declares its `pnpm` and `corepack`
+formulae mutually conflicting for precisely this reason — they install the same two binaries — and
+`npm install -g corepack` is worse again, because npm's global bin directory overwrites Homebrew's
+symlinks and then deletes them on uninstall, leaving `pnpm: command not found` with the formula
+still installed. That is not hypothetical; see [docs/11](11-troubleshooting.md).
+
+Here the owner is **the Homebrew `pnpm` formula**, and Corepack is deliberately not installed.
+
+Corepack is the more principled-sounding choice — it reads `packageManager` from `package.json` and
+fetches that exact version — so it is worth being explicit about why it lost:
+
+- It only supports **npm, pnpm and yarn**. It cannot honour a `packageManager` field pinned to
+  `bun`, which is the only pin the projects on this machine actually use.
+- It resolves versions over the network on first use of a project. A global pnpm just runs.
+
+That trade flips the moment you work on repos that pin pnpm versions and disagree about which. If
+that is you, install `corepack` **instead of** `pnpm`, not alongside it:
 
 ```bash
-npm install -g corepack && corepack enable
+brew uninstall pnpm && brew install corepack
 ```
 
-`scripts/languages.sh` reports which of the two states you are in rather than assuming.
+Whichever you pick, the rule is the same: one owner, installed by one package manager. The failure
+mode of getting this wrong is not a conflict message, it is a working `pnpm` that disappears weeks
+later when you uninstall the other one.
 
 | Manager | Use |
 |---|---|

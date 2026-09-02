@@ -119,7 +119,11 @@ created them**, so removing the npm copy takes the Homebrew formula's links with
 brew unlink pnpm && brew link pnpm
 ```
 
-Pick one installer per tool. If it is in a Brewfile, do not also `npm install -g` it.
+Pick one installer per tool. Macstrap uses the Homebrew `corepack` formula as the sole owner of
+`pnpm` and `pnpx`, because its shims honour each project's `packageManager` pin. Homebrew declares
+that formula mutually conflicting with its standalone `pnpm` formula, so migrate an older install
+with `brew uninstall pnpm` before re-running the packages step. Never add either owner with
+`npm install -g`; npm globals share Homebrew's `bin` and recreate the same collision.
 
 ## Docker
 

@@ -5,10 +5,12 @@ set -euo pipefail
 
 header "Editors"
 
+activate_homebrew || warn "Homebrew not found; only editors already on PATH will be configured"
+
 # --- VS Code --------------------------------------------------------------
 VSCODE_USER_DIR="$HOME/Library/Application Support/Code/User"
 
-if have code; then
+if have code || [ "$DRY_RUN" = "1" ]; then
   run mkdir -p "$VSCODE_USER_DIR"
 
   # settings.json is MERGED, not symlinked — and this is not a style choice.
@@ -85,7 +87,11 @@ PY
   fi
 
   log "Installing extensions"
-  installed="$(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  if [ "$DRY_RUN" = "1" ]; then
+    installed=""
+  else
+    installed="$(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  fi
   while IFS= read -r ext; do
     # Strip comments and blank lines.
     ext="${ext%%#*}"

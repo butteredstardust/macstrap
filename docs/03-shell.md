@@ -58,11 +58,11 @@ failing with `eslint: command not found` while `eslint` works fine when typed by
 
 ### Which file a `PATH` entry belongs in
 
-`.zshrc` is the default, because most `PATH` entries only matter to a human typing commands. But a
-directory holding a **compiler or build tool** goes in `.zshenv` instead. Build tooling shells out
-with `zsh -c`, which reads `.zshenv` and skips `.zshrc` entirely, so a toolchain configured in
-`.zshrc` works when you type it and disappears under anything that automates it. Rust is the case
-here — see [docs/05](05-languages.md).
+`.zshrc` is the default, because most `PATH` entries only matter to a human typing commands. An
+entry required by **non-interactive zsh** belongs in `.zshenv` instead. That is a narrower rule than
+"every compiler directory": only move it when an editor, build script, or other automation invokes
+the tool through `zsh -c`, which reads `.zshenv` and skips `.zshrc`. Rust is the case here — see
+[docs/05](05-languages.md).
 
 ### Prepend or append
 
@@ -70,7 +70,9 @@ Prepending means "this wins over the system copy", and that is a claim worth mak
 Where a directory may hold a *stale duplicate* of something another manager owns, append instead.
 `~/.cargo/bin` is the example: `cargo install` writes there, so it must stay reachable, but the
 upstream rustup installer also leaves shims there and its own `~/.cargo/env` prepends the directory
-— which silently outranks the Homebrew-managed toolchain. Appended, a leftover shim is harmless.
+— which can silently outrank the Homebrew-managed toolchain. Appending alone cannot repair an
+already-bad inherited order, so `.zshenv` removes both Rust entries before rebuilding their order:
+Homebrew rustup first and `~/.cargo/bin` last.
 
 ## Completion
 

@@ -38,7 +38,8 @@ brew "httpie"                    # curl for humans; keep curl for scripts
 
 # --- Dev runtimes ---------------------------------------------------------
 brew "node"                      # LTS-ish; see docs/05-languages.md for pinning
-brew "pnpm"
+brew "pnpm"                      # NOT alongside corepack — they fight over the
+                                 # same pnpm/pnpx binaries. See docs/05.
 brew "oven-sh/bun/bun"
 brew "python@3.12"              # a system-wide interpreter for one-off scripts.
                                  # Project versions come from uv, not from here,
@@ -49,7 +50,7 @@ brew "uv"                        # Python envs + tool installs; replaces pipx
 brew "rustup"                    # NOT `rust` — rustup manages toolchains.
                                  # Keg-only: needs $(brew --prefix)/opt/rustup/bin
                                  # on PATH, and `rustup default stable` after.
-                                 # .zshrc and scripts/languages.sh handle both.
+                                 # .zshenv and scripts/languages.sh handle both.
 
 # --- AI coding agents -----------------------------------------------------
 # Terminal agents, used daily. These coexist fine: each is a separate binary

@@ -94,9 +94,33 @@ fi
 
 # --- 5. Secret / identity scan --------------------------------------------
 header "privacy"
+# In a repository, scan exactly what could be published: tracked files plus
+# untracked, non-ignored files. Local logs, caches and Brewfile.local are
+# intentionally outside that boundary. Fall back to the old recursive scan
+# when git is unavailable or this copy is not a worktree.
+privacy_files="$TMPDIR_TEST/privacy-files"
+privacy_uses_git=0
+if have git && git -C "$MACSTRAP_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "$MACSTRAP_ROOT" ls-files --cached --others --exclude-standard > "$privacy_files"
+  privacy_uses_git=1
+fi
+
+privacy_match() {
+  local pattern="$1" rel
+  if [ "$privacy_uses_git" = "1" ]; then
+    while IFS= read -r rel; do
+      [ "$rel" = "scripts/test.sh" ] && continue
+      [ -f "$MACSTRAP_ROOT/$rel" ] || continue
+      grep -niE "$pattern" "$MACSTRAP_ROOT/$rel" >/dev/null 2>&1 && return 0
+    done < "$privacy_files"
+    return 1
+  fi
+  grep -rniE "$pattern" "$MACSTRAP_ROOT" \
+    --exclude-dir=.git --exclude="test.sh" >/dev/null 2>&1
+}
+
 # Anything matching here would identify the author once the repo is public.
-if grep -rniE '(api[_-]?key|auth[_-]?token|secret[_-]?key|password)[[:space:]]*=[[:space:]]*["'\''][^"'\'']+' \
-     "$MACSTRAP_ROOT" --exclude-dir=.git --exclude="test.sh" >/dev/null 2>&1; then
+if privacy_match '(api[_-]?key|auth[_-]?token|secret[_-]?key|password)[[:space:]]*=[[:space:]]*["'\''][^"'\'']+'; then
   fail "possible hardcoded credential"
 else
   ok "no hardcoded credentials"
@@ -104,10 +128,8 @@ fi
 
 # A literal home path leaks the account name. $HOME is the portable form, and
 # a hardcoded one would also simply be wrong on anyone else's machine.
-if grep -rn '/Users/[a-z]' "$MACSTRAP_ROOT" \
-     --exclude-dir=.git --exclude="test.sh" >/dev/null 2>&1; then
+if privacy_match '/Users/[a-z]'; then
   fail "hardcoded /Users/<name> path found — use \$HOME"
-  grep -rn '/Users/[a-z]' "$MACSTRAP_ROOT" --exclude-dir=.git --exclude="test.sh" | head -5
 else
   ok "no hardcoded home paths"
 fi
@@ -139,21 +161,69 @@ awk '/^brew_prefix\(\) \{$/ { print; print "  return 1  # test stub: no Homebrew
 # the run passes while testing nothing.
 if env -u BASH_ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
      "$fresh/bootstrap.sh" --dry-run --with-optional > "$TMPDIR_TEST/fresh.log" 2>&1; then
-  steps_seen=0
-  for step in Preflight Homebrew Packages Dotfiles "Language toolchains" Editors; do
-    grep -qx "$step" "$TMPDIR_TEST/fresh.log" && steps_seen=$((steps_seen + 1))
+  actions_seen=0
+  for action in \
+    "would run: rustup default stable" \
+    "would run: uv tool install ruff" \
+    "would merge dotfiles/vscode/settings.json" \
+    "would run: code --install-extension"
+  do
+    grep -Fq "$action" "$TMPDIR_TEST/fresh.log" && actions_seen=$((actions_seen + 1))
   done
-  if [ "$steps_seen" -eq 6 ]; then
-    ok "dry run previews all 6 steps with no Homebrew present"
+  if [ "$actions_seen" -eq 4 ]; then
+    ok "dry run previews real language and editor actions with no Homebrew present"
   else
-    fail "dry run exited 0 but only previewed $steps_seen/6 steps"
+    fail "dry run exited 0 but only previewed $actions_seen/4 required actions"
   fi
 else
   fail "dry run fails on a machine without Homebrew (exit $?)"
   tail -5 "$TMPDIR_TEST/fresh.log" | sed 's/^/       /'
 fi
 
-# --- 7. Docs referential integrity ----------------------------------------
+# --- 7. PATH activation regressions ---------------------------------------
+header "Homebrew PATH activation"
+
+# editors.sh must activate Homebrew itself: bootstrap runs every step in a
+# separate child, so the PATH changed by homebrew.sh cannot reach this script.
+#
+# Assert the CALL, via a stub that records being invoked — not the output. The
+# obvious version of this test asserts that the settings merge and an extension
+# install were previewed, and it passes whether or not editors.sh activates
+# anything: `have code || [ "$DRY_RUN" = "1" ]` previews them regardless. That
+# version was written, passed, and still passed with the activate_homebrew line
+# commented out. A test that cannot fail is worse than no test, because it is
+# also a claim.
+marker="$TMPDIR_TEST/activate-called"
+if env -u BASH_ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin" DRY_RUN=1 \
+     MACSTRAP_TEST_MARKER="$marker" \
+     bash -c '. "$1/scripts/lib.sh"
+              activate_homebrew() { : > "$MACSTRAP_TEST_MARKER"; }
+              . "$1/scripts/editors.sh"' \
+     _ "$MACSTRAP_ROOT" > "$TMPDIR_TEST/editors.log" 2>&1 \
+   && [ -f "$marker" ]; then
+  ok "editors.sh calls activate_homebrew before looking for code"
+else
+  fail "editors.sh never called activate_homebrew — 'code' is invisible on a fresh Mac"
+fi
+
+# Seeing brew already must not short-circuit the keg-only rustup PATH entry.
+brew_bin="$TMPDIR_TEST/brew-bin"
+brew_prefix_test="$TMPDIR_TEST/brew-prefix"
+mkdir -p "$brew_bin" "$brew_prefix_test/opt/rustup/bin"
+printf '#!/bin/sh\nprintf "%%s\\n" "$MACSTRAP_TEST_BREW_PREFIX"\n' > "$brew_bin/brew"
+printf '#!/bin/sh\nexit 0\n' > "$brew_prefix_test/opt/rustup/bin/cargo"
+chmod +x "$brew_bin/brew" "$brew_prefix_test/opt/rustup/bin/cargo"
+if env -u BASH_ENV PATH="$brew_bin:/usr/bin:/bin" \
+     MACSTRAP_TEST_BREW_PREFIX="$brew_prefix_test" \
+     bash -c '. "$1/scripts/lib.sh"; activate_homebrew; command -v cargo' _ "$MACSTRAP_ROOT" \
+     > "$TMPDIR_TEST/cargo-path" 2>/dev/null \
+   && grep -Fq "$brew_prefix_test/opt/rustup/bin/cargo" "$TMPDIR_TEST/cargo-path"; then
+  ok "activate_homebrew adds keg-only rustup even when brew is already visible"
+else
+  fail "activate_homebrew skipped the keg-only rustup PATH"
+fi
+
+# --- 8. Docs referential integrity ----------------------------------------
 header "docs"
 missing=0
 # Fed by a pipeline rather than `for doc in $(...)`: a path is one line, not one

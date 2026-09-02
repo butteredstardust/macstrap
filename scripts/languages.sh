@@ -32,24 +32,36 @@ if have rustup; then
     run rustup default stable
     run rustup component add rust-analyzer clippy rustfmt
   fi
+elif [ "$DRY_RUN" = "1" ]; then
+  log "Installing the stable Rust toolchain"
+  run rustup default stable
+  run rustup component add rust-analyzer clippy rustfmt
 else
   warn "rustup not on PATH — it is keg-only; expected at $(brew_prefix_expected)/opt/rustup/bin"
 fi
 
 # --- Node -----------------------------------------------------------------
-if have node; then
-  ok "node $(node --version), pnpm $(pnpm --version 2>/dev/null || echo 'missing')"
-
-  # Corepack is what honours package.json's "packageManager" field, pinning the
-  # package manager per project. Node stopped bundling it in v25, and Homebrew
-  # now ships v26 — so on a current machine it is simply absent and the pin is
-  # silently not enforced. Install it explicitly if you want that guarantee.
-  if have corepack; then
-    run corepack enable
-    ok "corepack enabled — \"packageManager\" pins are honoured"
+# pnpm comes from Homebrew and nothing else installs it. Corepack would be the
+# alternative owner, but it cannot honour a `packageManager` field pinned to
+# bun, and installing both leaves two owners of the same two binaries. The one
+# thing worth actively warning about is `npm install -g pnpm`: npm's global bin
+# overwrites Homebrew's symlinks and removes them on uninstall, which presents
+# as `pnpm: command not found` while `brew list` still shows it installed.
+if have node || [ "$DRY_RUN" = "1" ]; then
+  if have pnpm; then
+    ok "node $(node --version), pnpm $(pnpm --version)"
+    case "$(command -v pnpm)" in
+      "$(brew_prefix_expected)"/*) ;;
+      *) warn "pnpm resolves to $(command -v pnpm), not Homebrew — an npm -g install shadows the formula" ;;
+    esac
+  elif [ "$DRY_RUN" = "1" ]; then
+    skip "would use the Homebrew pnpm formula (not corepack; see docs/05-languages.md)"
   else
-    skip "corepack absent (unbundled from Node 25+); \"packageManager\" pins are NOT enforced"
-    skip "  to enable: npm install -g corepack && corepack enable"
+    warn "pnpm missing — run scripts/packages.sh; do not install it with npm -g"
+  fi
+
+  if have corepack; then
+    warn "corepack is installed as well as pnpm — both own pnpm/pnpx; keep one (docs/05)"
   fi
 else
   skip "node not installed"
@@ -62,12 +74,16 @@ have bun && ok "bun $(bun --version)"
 # (`uv python install`), project envs (`uv sync`) and global CLI tools
 # (`uv tool install`), and is fast enough that nothing else is worth the
 # maintenance.
-if have uv; then
-  ok "uv $(uv --version | awk '{print $2}')"
+if have uv || [ "$DRY_RUN" = "1" ]; then
+  if have uv; then
+    ok "uv $(uv --version | awk '{print $2}')"
+  else
+    skip "would configure uv after Homebrew installs it"
+  fi
   log "Installing global Python CLI tools"
   # Each lands in its own isolated venv, exposed on ~/.local/bin.
   for tool in ruff pyright; do
-    if uv tool list 2>/dev/null | grep -q "^$tool "; then
+    if have uv && uv tool list 2>/dev/null | grep -q "^$tool "; then
       skip "uv tool: $tool"
     else
       run uv tool install "$tool"

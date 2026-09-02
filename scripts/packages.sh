@@ -55,9 +55,17 @@ for tap in $taps; do
 done
 
 bundle_failures=0
+core_bundle_failed=0
 for bundle in $bundles; do
   file="$MACSTRAP_ROOT/$bundle"
-  [ -f "$file" ] || { warn "no such bundle: $bundle"; continue; }
+  if [ ! -f "$file" ]; then
+    warn "no such bundle: $bundle"
+    bundle_failures=$((bundle_failures + 1))
+    if [ "$bundle" = "Brewfile" ]; then
+      core_bundle_failed=1
+    fi
+    continue
+  fi
 
   log "brew bundle --file=$bundle"
   # --no-upgrade: leave already-installed formulae at their current version.
@@ -83,6 +91,9 @@ for bundle in $bundles; do
   # Losing the diagnostic because one GUI app wanted a password is backwards.
   if ! run brew bundle install --file="$file" --no-upgrade; then
     bundle_failures=$((bundle_failures + 1))
+    if [ "$bundle" = "Brewfile" ]; then
+      core_bundle_failed=1
+    fi
     warn "$bundle: some entries failed to install"
     case "$bundle" in
       Brewfile.optional) warn "  App Store entries are the usual cause; check 'mas account'" ;;
@@ -162,9 +173,13 @@ ${c##*/}"
 fi
 
 if [ "$bundle_failures" -gt 0 ]; then
-  # Report, do not die: dotfiles, languages and editors are all still worth
-  # running, and bootstrap.sh treats a non-zero step as fatal.
   warn "Packages complete, with $bundle_failures bundle(s) reporting failures above"
 else
   ok "Packages complete"
 fi
+
+# A partial apps/optional/local bundle should not invalidate the core machine,
+# but a failed core bundle means required tools are missing. Return that fact to
+# bootstrap.sh after diagnostics have run; bootstrap aggregates step failures
+# so dotfiles, languages and editors still get their chance to complete.
+[ "$core_bundle_failed" = "0" ]

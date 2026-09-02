@@ -25,30 +25,33 @@
 #
 # Hardcoded rather than `$(brew --prefix rustup)`: shelling out to brew costs
 # ~100ms, and this file runs for every zsh, including every `zsh -c` a build
-# script spawns.
+# script spawns. Rebuild the order rather than using an append-if-missing guard:
+# a parent process may already have supplied the same entries in the wrong order.
+_macstrap_rustup_dir=""
 if [ -d /opt/homebrew/opt/rustup/bin ]; then
-  case ":$PATH:" in
-    *":/opt/homebrew/opt/rustup/bin:"*) ;;
-    *) export PATH="/opt/homebrew/opt/rustup/bin:$PATH" ;;
-  esac
+  _macstrap_rustup_dir=/opt/homebrew/opt/rustup/bin
 elif [ -d /usr/local/opt/rustup/bin ]; then
-  case ":$PATH:" in
-    *":/usr/local/opt/rustup/bin:"*) ;;
-    *) export PATH="/usr/local/opt/rustup/bin:$PATH" ;;
-  esac
+  _macstrap_rustup_dir=/usr/local/opt/rustup/bin
 fi
 
 # ~/.cargo/bin is still where `cargo install` writes, so it has to stay
-# reachable — but APPENDED, never prepended. Prepending is what the upstream
-# installer does, and it puts that directory ahead of Homebrew's, so a stale
-# shim left behind by an old rustup.rs install would quietly win over the
-# toolchain this machine actually manages. Last place, or not at all.
-if [ -d "$HOME/.cargo/bin" ]; then
-  case ":$PATH:" in
-    *":$HOME/.cargo/bin:"*) ;;
-    *) export PATH="$PATH:$HOME/.cargo/bin" ;;
-  esac
+# reachable — but after Homebrew's rustup directory. Remove every occurrence
+# of both entries first, preserving everything else inherited from the caller.
+if [ -n "$_macstrap_rustup_dir" ] || [ -d "$HOME/.cargo/bin" ]; then
+  typeset -a _macstrap_path _macstrap_clean_path
+  _macstrap_path=("${(@s/:/)PATH}")
+  _macstrap_clean_path=()
+  for _macstrap_path_entry in "${_macstrap_path[@]}"; do
+    case "$_macstrap_path_entry" in
+      /opt/homebrew/opt/rustup/bin|/usr/local/opt/rustup/bin|"$HOME/.cargo/bin") ;;
+      *) _macstrap_clean_path+=("$_macstrap_path_entry") ;;
+    esac
+  done
+  [ -n "$_macstrap_rustup_dir" ] && _macstrap_clean_path=("$_macstrap_rustup_dir" "${_macstrap_clean_path[@]}")
+  [ -d "$HOME/.cargo/bin" ] && _macstrap_clean_path+=("$HOME/.cargo/bin")
+  export PATH="${(j/:/)_macstrap_clean_path}"
 fi
+unset _macstrap_rustup_dir _macstrap_path _macstrap_clean_path _macstrap_path_entry
 
 # Machine-local secrets and signing keys. Read from a file rather than pasted,
 # so the value lives in exactly one place and never reaches this repo.

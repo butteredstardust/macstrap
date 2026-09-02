@@ -147,9 +147,10 @@ brew_prefix_expected() {
 # genuinely fresh Mac every step after homebrew.sh would inherit the original
 # pre-Homebrew PATH and fail. Every dependent script calls this.
 activate_homebrew() {
-  have brew && return 0
   local prefix
-  if ! prefix="$(brew_prefix)"; then
+  if have brew; then
+    prefix="$(brew --prefix)" || return 1
+  elif ! prefix="$(brew_prefix)"; then
     # A dry run on a genuinely fresh Mac reaches here, and it is not an error.
     # homebrew.sh only *printed* what it would do, so no brew binary exists —
     # yet this is the one machine where previewing the rest of the run matters.
@@ -168,8 +169,9 @@ activate_homebrew() {
       return 0
     fi
     return 1
+  else
+    eval "$("$prefix/bin/brew" shellenv)"
   fi
-  eval "$("$prefix/bin/brew" shellenv)"
 
   # rustup is keg-only (it conflicts with the `rust` formula), so Homebrew does
   # not symlink its binaries into bin/ — `rustup` itself is the one exception.

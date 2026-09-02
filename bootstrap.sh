@@ -96,15 +96,21 @@ log "steps:   $run_steps"
 
 started="$(date +%s)"
 
+failed_steps=""
 for step in $run_steps; do
   script="$MACSTRAP_ROOT/scripts/$step.sh"
   [ -f "$script" ] || die "missing script: $script"
   # Each step runs in its own bash so a `set -e` abort inside one is contained
   # and reported here with its name, rather than dying anonymously.
   if ! bash "$script"; then
-    die "step failed: $step"
+    warn "step failed: $step"
+    failed_steps="$failed_steps $step"
   fi
 done
+
+if [ -n "$failed_steps" ]; then
+  die "bootstrap completed with failed step(s):${failed_steps}"
+fi
 
 header "Done in $(( $(date +%s) - started ))s"
 cat <<'NEXT'
