@@ -9,7 +9,12 @@
 # --- AI / agent tooling ---------------------------------------------------
 # Claude Code installs via its own installer, not brew — see docs/07-editors.md.
 brew "ollama"                    # local models
-cask "lm-studio"                 # local model GUI + OpenAI-compatible server
+# cask "lm-studio"               # local model GUI + OpenAI-compatible server.
+#   Commented out, not deleted: it is a reasonable thing to want, but it stores
+#   models in ~/.lmstudio rather than under the cask, so uninstalling the app
+#   leaves the weights behind — 11GB of them here, months after the app was
+#   gone. `brew uninstall --cask` will not touch that directory. If you install
+#   it, put ~/.lmstudio on your list of things to check when you stop.
 
 # --- Extra CLI ------------------------------------------------------------
 brew "cocogitto"                 # conventional commits: check, changelog, bump
