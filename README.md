@@ -1,10 +1,21 @@
+<div align="center">
+
 # macstrap
 
-Reproducible macOS development machine: scripts to provision it, docs explaining every decision.
+**A reproducible macOS development machine.**
+**Scripts to provision it, docs explaining every decision.**
 
-Opinionated on purpose. It is not a dotfiles framework and there is nothing to configure before it
-works — clone, run, get a working machine. Every choice is written down with its reasoning, so you
-can disagree with a specific one instead of forking the whole thing.
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
+[![macOS](https://img.shields.io/badge/macOS-14%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/platform-Apple%20Silicon%20%7C%20Intel-lightgrey?style=for-the-badge)](#requirements)
+[![Shell](https://img.shields.io/badge/shell-zsh-4EAA25?style=for-the-badge&logo=zsh&logoColor=white)](dotfiles/zsh/zshrc)
+[![Homebrew](https://img.shields.io/badge/Homebrew-bundle-FBB040?style=for-the-badge&logo=homebrew&logoColor=white)](https://brew.sh)
+
+</div>
+
+---
+
+## Quick start
 
 ```bash
 git clone https://github.com/<you>/macstrap.git ~/Dev/macstrap
@@ -13,21 +24,28 @@ cd ~/Dev/macstrap
 ./bootstrap.sh
 ```
 
-Requires macOS 14+ on Apple Silicon or Intel. Nothing is installed as root.
+Opinionated on purpose. It is not a dotfiles framework and there is nothing to configure before it
+works — clone, run, get a working machine. Every choice is written down with its reasoning, so you
+can disagree with a specific one instead of forking the whole thing.
+
+### Requirements
+
+macOS 14+ on Apple Silicon or Intel. Nothing is installed as root — the scripts refuse to run under
+`sudo` and ask for it only at the moments that genuinely need it.
 
 ---
 
 ## What you get
 
-| | |
-|---|---|
-| **Shell** | zsh, no framework — starship prompt, three plugins, tuned completion and history |
-| **Terminal** | Ghostty with a Nerd Font, one deduplicated config |
-| **CLI** | `eza` `bat` `fd` `ripgrep` `dust` `procs` `delta` `jq` `gh` `htop` |
-| **Languages** | rustup, node + pnpm + bun, uv for Python |
-| **Editors** | VS Code, settings and extension list version-controlled |
-| **System** | Finder, keyboard, Dock and screenshot defaults — opt-in, all reversible |
-| **Upkeep** | `doctor.sh` health check, drift detection against the Brewfiles |
+| Area          | What it sets up                                                                  |
+| ------------- | -------------------------------------------------------------------------------- |
+| **Shell**     | zsh, no framework — starship prompt, three plugins, tuned completion and history  |
+| **Terminal**  | Ghostty with a Nerd Font, one deduplicated config                                |
+| **CLI**       | `eza` `bat` `fd` `ripgrep` `dust` `procs` `delta` `jq` `gh` `htop`               |
+| **Languages** | rustup, node + pnpm + bun, uv for Python                                         |
+| **Editors**   | VS Code, settings and extension list version-controlled                          |
+| **System**    | Finder, keyboard, Dock and screenshot defaults — opt-in, all reversible          |
+| **Upkeep**    | `doctor.sh` health check, drift detection against the Brewfiles                  |
 
 ---
 
@@ -76,19 +94,19 @@ docs/                     why each decision was made
 
 ## Docs
 
-| | |
-|---|---|
-| [01 — Essentials](docs/01-essentials.md) | Command Line Tools, Homebrew, what macOS already ships |
-| [02 — CLI tools](docs/02-cli-tools.md) | modern replacements, and what was deliberately left out |
-| [03 — Shell](docs/03-shell.md) | which zsh file runs when, load order, `PATH` without duplicates |
-| [04 — Terminal](docs/04-terminal.md) | Ghostty config, Nerd Fonts, terminfo over SSH |
-| [05 — Languages](docs/05-languages.md) | rustup, node, uv, and installing exactly one Docker |
-| [06 — Apps](docs/06-apps.md) | the three Brewfiles and why they are split |
-| [07 — Editors](docs/07-editors.md) | VS Code settings, extensions, and what must never go in them |
-| [08 — Git & GitHub](docs/08-git-github.md) | identity, noreply email, SSH keys, signing |
-| [09 — macOS defaults](docs/09-macos-defaults.md) | every `defaults write`, and how to reverse it |
-| [10 — Maintenance](docs/10-maintenance.md) | weekly routine, catching drift, migrating |
-| [11 — Troubleshooting](docs/11-troubleshooting.md) | symptom → cause → fix |
+| Doc                                                 | Covers                                                          |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| [01 — Essentials](docs/01-essentials.md)            | Command Line Tools, Homebrew, what macOS already ships          |
+| [02 — CLI tools](docs/02-cli-tools.md)              | modern replacements, and what was deliberately left out         |
+| [03 — Shell](docs/03-shell.md)                      | which zsh file runs when, load order, `PATH` without duplicates |
+| [04 — Terminal](docs/04-terminal.md)                | Ghostty config, Nerd Fonts, terminfo over SSH                   |
+| [05 — Languages](docs/05-languages.md)              | rustup, node, uv, and installing exactly one Docker             |
+| [06 — Apps](docs/06-apps.md)                        | the three Brewfiles and why they are split                      |
+| [07 — Editors](docs/07-editors.md)                  | VS Code settings, extensions, and what must never go in them    |
+| [08 — Git & GitHub](docs/08-git-github.md)          | identity, noreply email, SSH keys, signing                      |
+| [09 — macOS defaults](docs/09-macos-defaults.md)    | every `defaults write`, and how to reverse it                   |
+| [10 — Maintenance](docs/10-maintenance.md)          | weekly routine, catching drift, migrating                       |
+| [11 — Troubleshooting](docs/11-troubleshooting.md)  | symptom → cause → fix                                           |
 
 ---
 
@@ -127,13 +145,13 @@ copies compete.
 
 This repo is public and contains no identifying information. If you fork it, keep it that way:
 
-| Never commit | Where it goes |
-|---|---|
-| name, email, GitHub handle | `~/.gitconfig`, rendered from a template |
-| API tokens, auth headers, local service URLs | `~/.zshrc.local`, `~/.zshenv.local` |
-| signing keys | a file outside the repo, read by `.zshenv.local` |
-| hostnames, LAN IPs, internal endpoints | not here at all |
-| `~/.ssh`, `~/.config/gh/hosts.yml`, `~/.claude/` | nowhere — regenerate per machine |
+| Never commit                                     | Where it goes                             |
+| ------------------------------------------------ | ----------------------------------------- |
+| name, email, GitHub handle                       | `~/.gitconfig`, rendered from a template  |
+| API tokens, auth headers, local service URLs     | `~/.zshrc.local`, `~/.zshenv.local`       |
+| signing keys                                     | a file outside the repo, read by `.zshenv.local` |
+| hostnames, LAN IPs, internal endpoints           | not here at all                           |
+| `~/.ssh`, `~/.config/gh/hosts.yml`, `~/.claude/` | nowhere — regenerate per machine          |
 
 `.gitignore` covers `*.local`, `secrets/`, and the rendered `dotfiles/git/gitconfig`. Before your
 first push:
@@ -157,4 +175,8 @@ platform-independent. Contributions welcome.
 Structure inspired by [xmlking's macOS Setup Guide](https://xmlking.gitbook.io/macos-setup/).
 The specific choices, and the gotchas, are from running this setup daily.
 
-MIT licensed. Take what is useful, ignore the rest.
+---
+
+## License
+
+MIT. Take what is useful, ignore the rest.
