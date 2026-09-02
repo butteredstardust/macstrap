@@ -11,10 +11,9 @@
 
 Every other dotfile here is a symlink, on the principle that editing the live file *is* editing the
 repo. `settings.json` is the one exception, because VS Code writes to it — extensions persist their
-own state there through the settings UI, and some of that state is secret. The machine this repo was
-distilled from had an `ANTHROPIC_AUTH_TOKEN` and a `localhost` service URL in this file, put there by
-an extension, not by hand. A symlink would have committed both to a public repo the next time the
-extension saved.
+own state there through the settings UI, and some of that state is secret. Auth tokens and internal
+service URLs land in this file routinely, written by an extension rather than by hand, and you will
+not notice. A symlink would commit whatever an extension last saved, the next time it saved it.
 
 So `scripts/editors.sh` merges: the repo's keys win for the keys the repo declares, and anything else
 already in the file is left alone. Same rule as `~/.gitconfig`, for the same reason.
@@ -36,18 +35,23 @@ If `code` is not on `PATH`: open VS Code → `⇧⌘P` → **Shell Command: Inst
 | Privacy | telemetry off, release notes off, recommendation prompts off |
 | Appearance | Tokyo Night, Nerd Font with ligatures, no minimap, sticky scroll on |
 | Editing | format on save, autosave on focus change, trim trailing whitespace |
-| Friction | delete/drag confirmations off, workspace trust off |
+| Friction | delete/drag confirmations off |
 
-**The friction group is a deliberate trade.** Disabling workspace trust means opening a cloned repo
-executes its tasks and extension code without asking. Reasonable on a personal machine where you
-clone your own work; reconsider it on a work machine or if you review untrusted code.
+**The friction group only turns off prompts you can undo.** Deleting a file you can restore from git
+is worth one less dialog; executing untrusted code is not.
+
+Workspace Trust is therefore left **on**. Disabling it (`security.workspace.trust.enabled: false`)
+means opening a cloned repo runs its tasks and extension code without asking — defensible on a
+machine where you only ever clone your own work, indefensible as a default someone else inherits by
+running this repo. If you want it, set it in your own user settings; the merge in `scripts/editors.sh`
+will leave it alone. The same goes for `security.promptForLocalFileProtocolHandling`.
 
 ### Settings that must not live here
 
 `dotfiles/vscode/settings.json` is public. Anything with a token, an internal hostname, or a URL to
-a private service belongs in the project's `.vscode/settings.json` — or in nothing at all. The
-original of this file carried an auth token for a local proxy; that is exactly the leak this split
-prevents.
+a private service belongs in the project's `.vscode/settings.json` — or in nothing at all. Check
+before you copy a key here: the settings UI writes credentials into the same file as your font
+choice, and the file gives you no hint which is which.
 
 ### Extensions
 

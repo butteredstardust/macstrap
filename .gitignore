@@ -10,6 +10,32 @@ local/
 dotfiles/git/gitconfig
 secrets/
 
+# Credentials. Nothing here matches a file that exists today — that is the
+# point. These are the names a secret arrives under when someone (or some tool)
+# drops one in the repo root by accident, and `git add .` does not ask twice.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.keystore
+*.jks
+id_rsa
+id_ecdsa
+id_ed25519
+.netrc
+.npmrc
+.pypirc
+credentials
+credentials.*
+*_credentials
+*.credentials
+!*.key.example
+!.env.example
+
 # Editors
 .idea/
 *.swp

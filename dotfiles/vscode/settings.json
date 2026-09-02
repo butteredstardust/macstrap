@@ -50,12 +50,15 @@
   "git.enableSmartCommit": true,
 
   // --- Friction removal ---------------------------------------------------
-  // These trade a safety net for speed. Fine on a personal machine where every
-  // project is in git; reconsider on a shared or work machine.
+  // These trade a safety net for speed, but only for file operations you can
+  // recover from git. Fine on a personal machine; reconsider on a shared one.
   "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": false,
-  "security.workspace.trust.enabled": false,
-  "security.promptForLocalFileProtocolHandling": false,
+  // Deliberately NOT set here: "security.workspace.trust.enabled" and
+  // "security.promptForLocalFileProtocolHandling". Disabling either lets a
+  // cloned repo run its tasks and extension code the moment you open it, which
+  // is not a default worth shipping to someone else's machine. Opt in per
+  // machine if you want it — see docs/07-editors.md.
 
   // --- Languages ----------------------------------------------------------
   "python.analysis.typeCheckingMode": "standard",
