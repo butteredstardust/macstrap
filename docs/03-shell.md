@@ -56,6 +56,22 @@ discards whatever the caller set up — including the `node_modules/.bin` entry 
 prepend for package scripts, and any inline `PATH="..." cmd` prefix. The symptom is a package script
 failing with `eslint: command not found` while `eslint` works fine when typed by hand.
 
+### Which file a `PATH` entry belongs in
+
+`.zshrc` is the default, because most `PATH` entries only matter to a human typing commands. But a
+directory holding a **compiler or build tool** goes in `.zshenv` instead. Build tooling shells out
+with `zsh -c`, which reads `.zshenv` and skips `.zshrc` entirely, so a toolchain configured in
+`.zshrc` works when you type it and disappears under anything that automates it. Rust is the case
+here — see [docs/05](05-languages.md).
+
+### Prepend or append
+
+Prepending means "this wins over the system copy", and that is a claim worth making deliberately.
+Where a directory may hold a *stale duplicate* of something another manager owns, append instead.
+`~/.cargo/bin` is the example: `cargo install` writes there, so it must stay reachable, but the
+upstream rustup installer also leaves shims there and its own `~/.cargo/env` prepends the directory
+— which silently outranks the Homebrew-managed toolchain. Appended, a leftover shim is harmless.
+
 ## Completion
 
 ```zsh

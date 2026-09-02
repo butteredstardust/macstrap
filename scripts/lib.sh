@@ -171,9 +171,10 @@ activate_homebrew() {
   fi
   eval "$("$prefix/bin/brew" shellenv)"
 
-  # rustup is keg-only (it conflicts with the `rust` formula), so Homebrew
-  # never symlinks it into bin/. Without this, `cargo` and `rustup` are absent
-  # even though the formula installed fine.
+  # rustup is keg-only (it conflicts with the `rust` formula), so Homebrew does
+  # not symlink its binaries into bin/ — `rustup` itself is the one exception.
+  # Without this, `cargo` is absent even though the formula installed fine and
+  # `rustup` answers normally, which is a misleading way to fail.
   [ -d "$prefix/opt/rustup/bin" ] && export PATH="$prefix/opt/rustup/bin:$PATH"
   return 0
 }

@@ -26,18 +26,10 @@ path_prepend "${PNPM_HOME:-$HOME/Library/pnpm}"  # pnpm global bins
 path_prepend "$HOME/.bun/bin"
 export PNPM_HOME="${PNPM_HOME:-$HOME/Library/pnpm}"
 
-# rustup is keg-only in Homebrew (it conflicts with the `rust` formula), so it
-# is never symlinked into bin/. Without this line `cargo` does not exist even
-# though the formula is installed. Hardcoded rather than `brew --prefix rustup`
-# because shelling out to brew costs ~100ms of every single shell startup.
-if [ -d /opt/homebrew/opt/rustup/bin ]; then
-  path_prepend /opt/homebrew/opt/rustup/bin
-elif [ -d /usr/local/opt/rustup/bin ]; then
-  path_prepend /usr/local/opt/rustup/bin
-fi
-
-# Rust toolchains (rustup). Guarded: the file only exists after `rustup-init`.
-[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+# Rust lives in ~/.zshenv, not here. It is keg-only, so `cargo` exists only on
+# that PATH entry — and a build script running `zsh -c cargo build` never reads
+# this file. Setting it here made rust work interactively and vanish in CI-style
+# invocations, which is a maddening bug to chase.
 
 # --- Environment ----------------------------------------------------------
 export EDITOR="code --wait"     # matches git's core.editor; see docs/08

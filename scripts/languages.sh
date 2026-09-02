@@ -15,9 +15,13 @@ activate_homebrew || warn "Homebrew not found; only tools already on PATH will b
 # Two separate traps here, and hitting either leaves you with a broken Rust:
 #
 #   1. The formula is KEG-ONLY (it conflicts with the `rust` formula), so
-#      Homebrew never symlinks it into bin/. `rustup` and `cargo` are simply
-#      absent from PATH until $(brew --prefix rustup)/bin is added.
-#      activate_homebrew does that for this run; .zshrc does it permanently.
+#      Homebrew does not symlink its binaries into bin/ — except `rustup`
+#      itself, which its post-install step does link. That asymmetry is the
+#      confusing part: `rustup` answers fine while `cargo` is not found at all,
+#      which reads as a broken toolchain rather than a missing PATH entry.
+#      Both live in $(brew --prefix rustup)/bin. activate_homebrew adds it for
+#      this run; .zshenv does it permanently (.zshenv, not .zshrc — a build
+#      script running `zsh -c cargo build` never reads the latter).
 #   2. Even once found, the formula installs the MANAGER only — no toolchain.
 #      Every cargo invocation then fails with "no default toolchain configured".
 if have rustup; then

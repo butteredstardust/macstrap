@@ -9,7 +9,46 @@
 # entirely — a variable exported only there is invisible to it.
 
 # Rust toolchain, needed by editors and build scripts that never see .zshrc.
-[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+#
+# rustup comes from Homebrew, and Homebrew keeps it keg-only because it
+# conflicts with the `rust` formula — so `cargo`, `rustc` and friends are never
+# symlinked into bin/ and exist only here. `rustup` alone is symlinked into
+# bin/, which is worse than it sounds: without this line a non-interactive
+# shell finds `rustup` but not `cargo`, and the failure looks like a broken
+# toolchain rather than a missing PATH entry.
+#
+# Deliberately NOT `. "$HOME/.cargo/env"`. That file is written by the upstream
+# rustup.rs installer and prepends ~/.cargo/bin, whose shims are a second,
+# independently-versioned copy of rustup. Both dispatch to the same toolchains
+# in ~/.rustup, so the split is invisible until the two versions disagree.
+# One installer owns rustup here, and it is Homebrew. See docs/05-languages.md.
+#
+# Hardcoded rather than `$(brew --prefix rustup)`: shelling out to brew costs
+# ~100ms, and this file runs for every zsh, including every `zsh -c` a build
+# script spawns.
+if [ -d /opt/homebrew/opt/rustup/bin ]; then
+  case ":$PATH:" in
+    *":/opt/homebrew/opt/rustup/bin:"*) ;;
+    *) export PATH="/opt/homebrew/opt/rustup/bin:$PATH" ;;
+  esac
+elif [ -d /usr/local/opt/rustup/bin ]; then
+  case ":$PATH:" in
+    *":/usr/local/opt/rustup/bin:"*) ;;
+    *) export PATH="/usr/local/opt/rustup/bin:$PATH" ;;
+  esac
+fi
+
+# ~/.cargo/bin is still where `cargo install` writes, so it has to stay
+# reachable — but APPENDED, never prepended. Prepending is what the upstream
+# installer does, and it puts that directory ahead of Homebrew's, so a stale
+# shim left behind by an old rustup.rs install would quietly win over the
+# toolchain this machine actually manages. Last place, or not at all.
+if [ -d "$HOME/.cargo/bin" ]; then
+  case ":$PATH:" in
+    *":$HOME/.cargo/bin:"*) ;;
+    *) export PATH="$PATH:$HOME/.cargo/bin" ;;
+  esac
+fi
 
 # Machine-local secrets and signing keys. Read from a file rather than pasted,
 # so the value lives in exactly one place and never reaches this repo.
