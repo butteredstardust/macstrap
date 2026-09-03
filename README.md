@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/macstrap.png" alt="" width="128" height="128">
+
 # macstrap
 
 **A reproducible macOS development machine.**
