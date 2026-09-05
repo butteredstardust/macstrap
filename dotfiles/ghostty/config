@@ -1,26 +1,33 @@
 # Ghostty — ~/.config/ghostty/config
 #
-# Managed by macstrap. Ghostty applies the LAST occurrence of a key, so
-# declaring a setting twice silently discards the first one. Each key appears
-# exactly once below; keep it that way.
+# WARNING: Ghostty reads everything after `=` to the end of the line as the
+# value. A trailing `# comment` makes the value invalid. Put each comment on its
+# own line above the setting.
+#
+# WARNING: Ghostty applies the LAST occurrence of a key. Declaring a setting
+# twice discards the first one silently. Each key appears once below. Keep it
+# that way.
+#
+# Managed by macstrap.
 #
 # Reload without restarting: ⌘, opens this file, ⇧⌘, reloads it.
-# See every default and its docs with: ghostty +show-config --default --docs
+# List every default and its docs: ghostty +show-config --default --docs
 
 # --- Theme ----------------------------------------------------------------
 theme = Gruvbox Dark
-# Ghostty ships hundreds; browse them with: ghostty +list-themes
-# For an auto light/dark switch, use: theme = light:GruvboxLight,dark:GruvboxDark
+# Ghostty ships hundreds. List them with: ghostty +list-themes
+# For an automatic light/dark switch: theme = light:GruvboxLight,dark:GruvboxDark
 
-# Bump low-contrast pairs in a theme until they are legible. 1.0 disables.
+# Raise low-contrast colour pairs until they are legible. 1.0 disables this.
 minimum-contrast = 1.3
 
 # --- Font -----------------------------------------------------------------
-# Nerd Font variant is required for the glyphs in starship and eza --icons.
-# Installed by Brewfile.apps as font-jetbrains-mono-nerd-font.
+# The Nerd Font variant is required for the glyphs in starship and eza --icons.
+# Brewfile.apps installs it as font-jetbrains-mono-nerd-font.
 font-family = JetBrainsMono Nerd Font
 font-size = 14
-font-thicken = true      # macOS-only; compensates for thin stem rendering
+# macOS only. Compensates for thin stem rendering.
+font-thicken = true
 
 # --- Window ---------------------------------------------------------------
 window-height = 36
@@ -34,7 +41,8 @@ unfocused-split-opacity = 0.6
 
 # --- macOS ----------------------------------------------------------------
 macos-titlebar-style = tabs
-macos-option-as-alt = left   # left ⌥ sends Esc+ for readline; right ⌥ still types é/ø
+# Left ⌥ sends Esc+ for readline. Right ⌥ still types é/ø.
+macos-option-as-alt = left
 
 # --- Cursor & mouse -------------------------------------------------------
 cursor-style = bar

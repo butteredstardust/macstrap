@@ -1,10 +1,10 @@
 # ~/.zprofile — login shells.
 #
-# Homebrew's shellenv goes here, not in .zshrc: it sets PATH, MANPATH and
+# Put Homebrew's shellenv here, not in .zshrc. It sets PATH, MANPATH and
 # HOMEBREW_* once per login, and everything spawned from that session inherits
-# it. Re-running it per interactive shell just duplicates PATH entries.
+# it. Running it per interactive shell only duplicates PATH entries.
 #
-# /opt/homebrew is the Apple Silicon prefix; Intel Macs use /usr/local.
+# /opt/homebrew is the Apple Silicon prefix. Intel Macs use /usr/local.
 if [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [ -x /usr/local/bin/brew ]; then

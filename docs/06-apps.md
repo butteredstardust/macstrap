@@ -17,10 +17,10 @@ brew bundle --file=Brewfile.optional
 
 | App | Role |
 |---|---|
-| Ghostty | terminal — see `docs/04-terminal.md` |
+| Ghostty | terminal. See `docs/04-terminal.md` |
 | Visual Studio Code | primary editor |
-| Docker Desktop | containers — install only one Docker, see `docs/05-languages.md` |
-| Google Chrome | devtools and browser automation, not necessarily the default browser |
+| Docker Desktop | containers. Install exactly one Docker, see `docs/05-languages.md` |
+| Google Chrome | devtools and browser automation. Not necessarily the default browser |
 
 ## Utilities
 
@@ -37,29 +37,28 @@ brew bundle --file=Brewfile.optional
 |---|---|
 | Pearcleaner | uninstaller that removes support files too. Dragging to Trash does not |
 | QDirStat | graphical disk usage. `dust` covers the CLI case |
-| Applite | GUI over Homebrew casks. Useful for browsing; `brew` remains the source of truth |
+| Applite | GUI over Homebrew casks. Useful for browsing. `brew` remains the source of truth |
 | balenaEtcher | flashing SD cards and USB images |
 | Cyberduck | SFTP/S3 browser |
 | TextMate | fast plain-text editor for files too big or too trivial for VS Code |
 
 ## Mac App Store
 
-Some apps have no cask and only ship through the App Store. `mas` handles those, and the entries
-live at the bottom of `Brewfile.optional`.
+Some apps have no cask and ship only through the App Store. `mas` installs those. Its entries live at
+the bottom of `Brewfile.optional`.
 
 ```
 mas "Amphetamine", id: 937984704
 ```
 
-**The catch:** you must be signed in to the App Store, and `mas` is the least reliable installer
-here. Current `brew bundle` tries `mas install` and falls back to `mas get`, so a free app you have
-never "bought" can usually still be acquired — but sign-in state, region availability, age rating
-and App Store outages all still fail, and `brew bundle` exits non-zero for the whole file when one
-entry does.
+**Sign in to the App Store first.** `mas` is the least reliable installer here. `brew bundle` tries
+`mas install` and falls back to `mas get`, so a free app you never "bought" usually still installs.
+Sign-in state, region availability, age rating and App Store outages each still fail. One failed
+entry makes `brew bundle` exit non-zero for the whole file.
 
-That is why the `mas` entries live in `Brewfile.optional`, and why `scripts/packages.sh` treats a
-failure of that bundle as non-fatal. An App Store hiccup must not stop your dotfiles, toolchains and
-editors from being set up — those steps all run after packages.
+So the `mas` entries live in `Brewfile.optional`, and `scripts/packages.sh` treats a failure of that
+bundle as non-fatal. Dotfiles, toolchains and editors all run after packages, and an App Store hiccup
+must not stop them.
 
 Find the id of an app you already have:
 
@@ -67,13 +66,13 @@ Find the id of an app you already have:
 mdls -name kMDItemAppStoreAdamID -raw "/Applications/Amphetamine.app"
 ```
 
-`mas` cannot install Safari extensions independently either; they arrive with their container app
-(Hush, Dark Reader and uBlock Origin Lite are each a full App Store app).
+`mas` cannot install Safari extensions on their own. Each arrives with its container app. Hush, Dark
+Reader and uBlock Origin Lite are each a full App Store app.
 
 ## Apps installed outside Homebrew
 
-Casks do not cover everything, and it is easy to accumulate hand-downloaded `.app` bundles that no
-manifest knows about. Audit them:
+Casks do not cover everything. Hand-downloaded `.app` bundles accumulate, and no manifest knows about
+them. Audit them:
 
 ```bash
 brew info --cask --json=v2 $(brew list --cask | tr '\n' ' ') \
@@ -82,46 +81,46 @@ brew info --cask --json=v2 $(brew list --cask | tr '\n' ' ') \
 comm -23 /tmp/all-apps /tmp/brew-apps
 ```
 
-Use `/bin/ls`, not `ls` — the alias in `.zshrc` maps it to `eza --long`, which returns a table
-rather than bare names and silently breaks the diff.
+Use `/bin/ls`, not `ls`. The alias in `.zshrc` maps `ls` to `eza --long`, which returns a table
+instead of bare names and breaks the diff silently.
 
 For each result, decide:
 
 | Result | Action |
 |---|---|
-| a cask exists | migrate it — see below. `--force` is a reinstall, not an adoption |
+| a cask exists | migrate it, see below. `--force` is a reinstall, not an adoption |
 | App Store only | add a `mas` line |
-| self-updating (Docker, Claude, browsers) | cask it for the record; let it update itself |
+| self-updating (Docker, Claude, browsers) | declare the cask for the record. Let the app update itself |
 | something you built yourself | leave it out of the Brewfiles entirely |
 | you don't recognise it | that is the point of the audit |
 
 ### Migrating a hand-installed app to a cask
 
-There is no "adopt" operation. `brew install --cask --force <name>` **overwrites the app bundle** with
-Homebrew's copy — it does not bless the one already there. That is usually fine, because app *data*
-lives in `~/Library/Application Support` and `~/Library/Preferences`, not in the bundle. But do it
+Quit the app before starting. Replacing a running bundle corrupts its state.
+
+Homebrew has no "adopt" operation. `brew install --cask --force <name>` **overwrites the app bundle**
+with Homebrew's copy. It does not bless the bundle already there. That is usually fine: app *data*
+lives in `~/Library/Application Support` and `~/Library/Preferences`, not in the bundle. Do it
 deliberately:
 
 ```bash
 brew info --cask <name>                    # check version and whether it auto-updates
-# quit the app first — replacing a running bundle corrupts its state
 brew install --cask --force <name>
 brew list --cask --versions <name>         # confirm a receipt now exists
 ```
 
-For App Store installs being switched to a cask, delete the MAS copy first; otherwise you have two
-update mechanisms fighting over one bundle. **Pick one source per app and record which.** Hush and
-The Unarchiver exist both ways, so they are exactly where this goes wrong.
+Switching an App Store install to a cask? Remove the MAS copy first. Otherwise two update mechanisms
+fight over one bundle. **Pick one source per app, and record which.** Hush and The Unarchiver ship
+both ways, so they are where this goes wrong.
 
 ### Self-updating apps
 
-Claude, Tailscale and The Unarchiver declare `auto_updates true`. Homebrew skips these during a
-normal `brew upgrade` — it compares bundle metadata and will not push its recorded version over a
-newer installed one, so the "cask downgrades my app" worry is unfounded *unless* you use
-`brew upgrade --greedy`, which explicitly overrides that behaviour.
+Claude, Tailscale and The Unarchiver declare `auto_updates true`. A normal `brew upgrade` skips them.
+Homebrew compares bundle metadata and will not push its recorded version over a newer installed one.
+`brew upgrade --greedy` overrides that behaviour, so avoid it for these apps.
 
-Treat their cask entries as a **record of what belongs on the machine and where it came from**,
-not as the thing that keeps them current. Avoid `--greedy` for them.
+Treat their cask entries as a **record of what belongs on the machine and where it came from**. They
+are not what keeps those apps current.
 
 ## Keeping the Brewfiles honest
 
@@ -132,11 +131,11 @@ brew bundle dump --describe --force --file=/tmp/Brewfile.current
 diff <(sort Brewfile) <(sort /tmp/Brewfile.current)
 ```
 
-`scripts/packages.sh` runs this comparison at the end of every provisioning run and reports anything
-installed but undeclared. It only reports — uninstalling something you did not ask it to is not a
-provisioning script's call.
+`scripts/packages.sh` runs this comparison at the end of every provisioning run. It reports anything
+installed but undeclared, and never removes it. Uninstalling something unasked is not a provisioning
+script's call.
 
-Three things make that comparison lie if you write it naively, and all three are handled:
+Three things make a naive version of that comparison lie. The script handles all three:
 
 | | |
 |---|---|
@@ -146,14 +145,12 @@ Three things make that comparison lie if you write it naively, and all three are
 
 ### `Brewfile.local`
 
-Gitignored by `*.local`, installed and counted alongside the tracked bundles. It exists because the
-only other way to silence the drift report is to publish the package name, and some names should not
-be published — internal tooling, an employer's tap, a personal CLI. Without it, "keep the report
-clean" and "keep the repo publishable" pull in opposite directions and the report loses.
+Gitignored by `*.local`. Installed and counted alongside the tracked bundles.
 
-It is also the honest place to park something you intend to remove but have not verified yet: a
-commented `brew uninstall <x>` next to the line records the intent where you will see it again.
+Declare here anything you need but cannot publish: internal tooling, an employer's tap, a personal
+CLI. Without this file, the only way to silence the drift report is to publish the package name. Then
+"keep the report clean" and "keep the repo publishable" pull against each other, and the report
+loses.
 
-The cruft this guards against is real: the machine this repo was distilled from had a pinned
-`icu4c@75` (a leaked transitive dependency), three overlapping Docker installs, and four editor AI
-extensions competing for one inline-completion slot.
+It is also the place to park a package you intend to remove but have not verified yet. Write a
+commented `brew uninstall <x>` next to the line to record the intent where you will see it again.

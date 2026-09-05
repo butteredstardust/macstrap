@@ -3,11 +3,12 @@
 # Install:  scripts/editors.sh
 # Refresh:  code --list-extensions > dotfiles/vscode/extensions.txt
 #
-# Kept to things that earn their startup cost. Notably absent: two extensions
-# doing the same job. Inline AI suggestions are the worst case — several
-# providers race for the same ghost-text slot and you get whichever won — but
-# the rule is general: two Docker extensions means two container views and two
-# sets of commands in the palette.
+# Declare one extension per job. Two extensions doing the same job collide.
+# Two Docker extensions give two container views and two sets of palette
+# commands. Inline AI suggestions are the worst case: several providers race for
+# the same ghost-text slot, and whichever wins is the one you see.
+#
+# Every extension here earns its startup cost.
 
 # --- Core ---------------------------------------------------------------
 esbenp.prettier-vscode
@@ -35,13 +36,15 @@ repreng.csv                 # column-aligned CSV instead of a wall of commas
 # --- Containers & remote ------------------------------------------------
 ms-azuretools.vscode-containers
 ms-vscode-remote.remote-containers
-docker.docker               # the official one. NOT ms-azuretools.vscode-docker,
-                            # which it supersedes — installing both gives two
-                            # container panels and duplicate palette commands.
+# Use docker.docker, the official extension. It supersedes
+# ms-azuretools.vscode-docker. Installing both gives two container panels and
+# duplicate palette commands.
+docker.docker
 
 # --- AI -----------------------------------------------------------------
-# These are agents you invoke, not inline-completion providers, so they do not
-# fight the way Copilot/Gemini/Codeium do. Adding a fourth is how that starts.
+# These three are agents you invoke, not inline-completion providers. They do
+# not compete for the ghost-text slot the way Copilot, Gemini and Codeium do.
+# Check that before adding a fourth.
 anthropic.claude-code
 kilocode.kilo-code
 sst-dev.opencode

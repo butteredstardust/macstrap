@@ -11,17 +11,19 @@
 #   ./bootstrap.sh --only dotfiles,editors
 #   ./bootstrap.sh --list
 #
-# Every step is idempotent: running this twice is safe and the second run is
-# mostly no-ops. Read scripts/macos-defaults.sh before enabling it — it is the
-# only step that touches settings outside your home directory.
+# Every step is idempotent. Running this twice is safe, and the second run is
+# mostly no-ops.
+#
+# Read scripts/macos-defaults.sh before enabling it. It is the only step that
+# changes settings outside your home directory.
 set -euo pipefail
 
 MACSTRAP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export MACSTRAP_ROOT
 . "$MACSTRAP_ROOT/scripts/lib.sh"
 
-# Guards run before any argument is parsed, so `sudo ./bootstrap.sh --only
-# dotfiles` cannot slip past them by skipping the preflight step.
+# Run the guards before parsing arguments. Otherwise `sudo ./bootstrap.sh --only
+# dotfiles` skips the preflight step and slips past them.
 require_macos
 refuse_root
 
@@ -29,8 +31,8 @@ refuse_root
 STEPS="preflight homebrew packages dotfiles languages editors"
 OPTIONAL_STEPS="macos-defaults"
 
-# Print only the comment block at the top of this file, stopping at the first
-# non-comment line — so --help never spills implementation into the output.
+# Print the comment block at the top of this file, then stop at the first
+# non-comment line. This keeps implementation detail out of --help.
 usage() {
   while IFS= read -r line; do
     case "$line" in
@@ -52,9 +54,8 @@ while [ $# -gt 0 ]; do
     -y|--yes)              export ASSUME_YES=1 ;;
     --with-optional)       export WITH_OPTIONAL=1 ;;
     --with-macos-defaults) with_macos_defaults=1 ;;
-    # Validate before shifting: `--only` as the last argument would otherwise
-    # leave $# at 0, and the second `shift` then fails under `set -e`, exiting
-    # 1 with no message at all.
+    # Validate before shifting. `--only` as the last argument leaves $# at 0.
+    # The second `shift` then fails under `set -e` and exits 1 with no message.
     --only)                [ $# -ge 2 ] || die "--only requires a value (try --list)"
                            only="$2"; shift ;;
     --only=*)              only="${1#*=}" ;;
@@ -66,8 +67,8 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -n "$only" ]; then
-  # Comma-separated selection, validated against the known step names so a typo
-  # fails loudly instead of silently doing nothing.
+  # Validate the comma-separated selection against the known step names. A typo
+  # then fails loudly instead of doing nothing.
   requested="$(echo "$only" | tr ',' ' ')"
   for step in $requested; do
     case " $STEPS $OPTIONAL_STEPS " in
@@ -100,8 +101,8 @@ failed_steps=""
 for step in $run_steps; do
   script="$MACSTRAP_ROOT/scripts/$step.sh"
   [ -f "$script" ] || die "missing script: $script"
-  # Each step runs in its own bash so a `set -e` abort inside one is contained
-  # and reported here with its name, rather than dying anonymously.
+  # Run each step in its own bash. A `set -e` abort inside one stays contained,
+  # and this loop reports it by name.
   if ! bash "$script"; then
     warn "step failed: $step"
     failed_steps="$failed_steps $step"

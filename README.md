@@ -26,14 +26,14 @@ cd ~/Dev/macstrap
 ./bootstrap.sh
 ```
 
-Opinionated on purpose. It is not a dotfiles framework and there is nothing to configure before it
-works — clone, run, get a working machine. Every choice is written down with its reasoning, so you
-can disagree with a specific one instead of forking the whole thing.
+Opinionated on purpose. This is not a dotfiles framework. Nothing needs configuring before it works:
+clone, run, get a working machine. Every choice carries its reasoning, so you can disagree with one
+decision instead of forking the whole repo.
 
 ### Requirements
 
-macOS 14+ on Apple Silicon or Intel. Nothing is installed as root — the scripts refuse to run under
-`sudo` and ask for it only at the moments that genuinely need it.
+macOS 14+ on Apple Silicon or Intel. Nothing installs as root. The scripts refuse to run under
+`sudo` and ask for it only at the steps that need it.
 
 ---
 
@@ -41,13 +41,13 @@ macOS 14+ on Apple Silicon or Intel. Nothing is installed as root — the script
 
 | Area          | What it sets up                                                                  |
 | ------------- | -------------------------------------------------------------------------------- |
-| **Shell**     | zsh, no framework — starship prompt, three plugins, tuned completion and history  |
-| **Terminal**  | Ghostty with a Nerd Font, one deduplicated config                                |
+| **Shell**     | zsh, no framework. starship prompt, three plugins, tuned completion and history   |
+| **Terminal**  | Ghostty with a Nerd Font. One config, each key declared once                      |
 | **CLI**       | `eza` `bat` `fd` `ripgrep` `dust` `procs` `delta` `jq` `gh` `htop`               |
 | **Languages** | rustup, node + pnpm + bun, uv for Python                                         |
-| **Editors**   | VS Code, settings and extension list version-controlled                          |
-| **System**    | Finder, keyboard, Dock and screenshot defaults — opt-in, all reversible          |
-| **Upkeep**    | `doctor.sh` health check, drift detection against the Brewfiles                  |
+| **Editors**   | VS Code. Settings and extension list tracked in git                              |
+| **System**    | Finder, keyboard, Dock and screenshot defaults. Opt-in, all reversible           |
+| **Upkeep**    | `doctor.sh` health check. Drift report against the Brewfiles                     |
 
 ---
 
@@ -66,7 +66,7 @@ scripts/doctor.sh                     # verify the result; changes nothing
 scripts/test.sh                       # checks the repo itself: lint, privacy, fresh-machine dry run
 ```
 
-Every step is idempotent. Running twice is safe; the second run is mostly no-ops.
+Every step is idempotent. Run it twice safely. The second run is mostly no-ops.
 
 ---
 
@@ -83,7 +83,7 @@ scripts/
   homebrew.sh             install brew, disable analytics
   packages.sh             brew bundle + drift report
   dotfiles.sh             symlink dotfiles, render git identity
-  languages.sh            rust toolchain, corepack, uv tools
+  languages.sh            rust toolchain, node check, uv tools
   editors.sh              VS Code settings + extensions, Claude Code
   macos-defaults.sh       system preferences (opt-in)
   doctor.sh               read-only health check
@@ -99,7 +99,7 @@ docs/                     why each decision was made
 | Doc                                                 | Covers                                                          |
 | --------------------------------------------------- | --------------------------------------------------------------- |
 | [01 — Essentials](docs/01-essentials.md)            | Command Line Tools, Homebrew, what macOS already ships          |
-| [02 — CLI tools](docs/02-cli-tools.md)              | modern replacements, and what was deliberately left out         |
+| [02 — CLI tools](docs/02-cli-tools.md)              | modern replacements, and what stays out on purpose              |
 | [03 — Shell](docs/03-shell.md)                      | which zsh file runs when, load order, `PATH` without duplicates |
 | [04 — Terminal](docs/04-terminal.md)                | Ghostty config, Nerd Fonts, terminfo over SSH                   |
 | [05 — Languages](docs/05-languages.md)              | rustup, node, uv, and installing exactly one Docker             |
@@ -114,38 +114,34 @@ docs/                     why each decision was made
 
 ## Principles
 
-**No framework.** oh-my-zsh is a lot of machinery to source three plugins. `.zshrc` does it in three
-lines and starts in a fraction of the time.
+**No framework.** oh-my-zsh is a lot of machinery to source three plugins. `.zshrc` sources them in
+three lines. It also starts in a fraction of the time.
 
 **Symlinks, not copies.** Editing `~/.zshrc` *is* editing the repo, so `git status` shows drift the
-moment it appears. The exception is anything holding an identity or a secret — `~/.gitconfig` is
-rendered from a template, and `~/.zshrc.local` / `~/.zshenv.local` are yours and untracked.
+moment it appears. Files holding an identity or a secret are the exception. `~/.gitconfig` renders
+from a template. `~/.zshrc.local` and `~/.zshenv.local` are yours, and untracked.
 
-**The machine gets a manager, the project gets a version.** Global installs are for tools you invoke
-outside a project. Versions belong in `rust-toolchain.toml`, `.nvmrc`, `uv.lock`.
+**The machine gets a manager, the project gets a version.** Install globally only what you invoke
+outside a project. Pin versions in `rust-toolchain.toml`, `.nvmrc`, `uv.lock`.
 
-**Idempotent and reversible.** Nothing is deleted. Replaced files become `<name>.bak-<timestamp>`.
-Every `defaults write` undoes with one `defaults delete`.
+**Idempotent and reversible.** Nothing is removed. Replaced files become `<name>.bak-<timestamp>`.
+Every `defaults write` reverses with one `defaults delete`.
 
-**Explain the gotcha, not the command.** `brew install eza` needs no documentation. Why
-`zsh-syntax-highlighting` must be sourced last, why a `PATH` assignment breaks `bun run`, and why
-Ghostty silently ignores your first `window-padding-x` — those cost hours to rediscover.
+**Explain the gotcha, not the command.** `brew install eza` needs no documentation. The docs cover
+what costs hours to rediscover: why `zsh-syntax-highlighting` must be sourced last, why a `PATH`
+assignment breaks `bun run`, why Ghostty ignores your first `window-padding-x`.
 
-**Cruft is not configuration.** This was distilled from a machine with a leaked transitive
-dependency pinned in `brew leaves`, three overlapping Docker installs, four editor AI extensions
-racing for the same inline-completion slot, a `conda init` block costing 150ms of every shell, and a
-terminal asking for a font that was never installed. None of it was a decision; all of it was
-sediment. Every entry here had to justify itself.
+**Cruft is not configuration.** Every package, extension and setting here justifies itself in the
+docs. One owner per tool, one extension per job, one Docker.
 
-The inverse also applies: several terminal AI agents *are* kept, because separate binaries you
-invoke deliberately do not conflict the way editor extensions do. Duplication is only cruft when the
-copies compete.
+Duplication is only cruft when the copies compete. Several terminal AI agents coexist here, because
+separate binaries you invoke deliberately never race each other. Two inline-completion providers do.
 
 ---
 
 ## Privacy
 
-This repo is public and contains no identifying information. If you fork it, keep it that way:
+This repo is public and holds no identifying information. Keep your fork that way:
 
 | Never commit                                     | Where it goes                             |
 | ------------------------------------------------ | ----------------------------------------- |
@@ -166,16 +162,15 @@ git log -p | grep -iE '(api[_-]?key|token|secret|password|@gmail|@users\.noreply
 
 ## Windows
 
-Out of scope for now. The structure leaves room — a `windows/` directory with `winget` manifests, a
-PowerShell profile and Windows Terminal settings, sharing `docs/` where the reasoning is
-platform-independent. Contributions welcome.
+Out of scope for now. The structure leaves room for it: a `windows/` directory with `winget`
+manifests, a PowerShell profile and Windows Terminal settings. It would share `docs/` wherever the
+reasoning is platform-independent. Contributions welcome.
 
 ---
 
 ## Credits
 
 Structure inspired by [xmlking's macOS Setup Guide](https://xmlking.gitbook.io/macos-setup/).
-The specific choices, and the gotchas, are from running this setup daily.
 
 ---
 

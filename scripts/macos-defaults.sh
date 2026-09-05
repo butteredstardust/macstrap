@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # macOS system preferences.
 #
-# This is the only script that changes settings outside your home directory's
-# dotfiles, so it is opt-in from bootstrap and worth reading before running.
+# WARNING: this step restarts Finder, Dock and SystemUIServer at the end. The
+# menu bar blanks briefly and open Finder windows close. Save your work first.
 #
-# Everything here is reversible: `defaults delete <domain> <key>` restores the
-# system default for any single line, and nothing is deleted or overwritten on
-# disk. It does restart Finder, Dock and SystemUIServer at the end, which will
-# briefly blank the menu bar and close Finder windows.
+# This is the only script that changes settings outside your dotfiles. It is
+# opt-in from bootstrap. Read it before running it.
+#
+# Every line is reversible. `defaults delete <domain> <key>` restores the system
+# default for one key. Nothing on disk is removed or overwritten.
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -17,8 +18,8 @@ require_macos
 log "Some settings need administrator rights; you may be prompted once."
 
 # --- Finder ---------------------------------------------------------------
-# Show file extensions. The default hides them, which makes `.txt` vs `.txt.rtf`
-# invisible and is a real footgun when a downloaded file is not what it claims.
+# Show file extensions. The default hides them, so `.txt` and `.txt.rtf` look
+# identical. That hides a downloaded file that is not what it claims to be.
 run defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 run defaults write com.apple.finder AppleShowAllFiles -bool true          # dotfiles
 run defaults write com.apple.finder ShowPathbar -bool true
@@ -27,8 +28,8 @@ run defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"   # list
 run defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"   # search this folder
 run defaults write com.apple.finder _FXSortFoldersFirst -bool true
 
-# Do not scatter .DS_Store files onto network shares and USB sticks. Purely
-# cosmetic locally; genuinely annoying in a shared or committed directory.
+# Keep .DS_Store files off network shares and USB sticks. They are harmless
+# locally. They are noise in a shared or committed directory.
 run defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 run defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
@@ -37,12 +38,12 @@ run defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 run defaults write NSGlobalDomain KeyRepeat -int 2
 run defaults write NSGlobalDomain InitialKeyRepeat -int 15
 
-# Hold-a-key must repeat, not open the accent picker. Non-negotiable in vim,
-# and in any editor where you hold j or l.
+# Make a held key repeat instead of opening the accent picker. Holding j or l
+# in vim depends on it.
 run defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
-# Disable "smart" substitutions: they turn straight quotes into curly ones and
-# `--` into an em dash, which silently corrupts code pasted into any text field.
+# Turn off the "smart" substitutions. They rewrite straight quotes as curly ones
+# and `--` as an em dash. That corrupts code pasted into any text field.
 run defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
 run defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
 run defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
@@ -62,7 +63,7 @@ run defaults write com.apple.dock mru-spaces -bool false         # keep Space or
 run defaults write com.apple.dock minimize-to-application -bool true
 
 # --- Screenshots ----------------------------------------------------------
-# Out of the Desktop and into a folder, with no drop shadow on window captures.
+# Send screenshots to a folder instead of the Desktop. Drop the window shadow.
 run mkdir -p "$HOME/Pictures/Screenshots"
 run defaults write com.apple.screencapture location -string "$HOME/Pictures/Screenshots"
 run defaults write com.apple.screencapture type -string "png"
@@ -79,7 +80,7 @@ run defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
 run defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
 
 # --- Safety ---------------------------------------------------------------
-# Crash reporter dialogs interrupt long builds; notification-only is enough.
+# Crash reporter dialogs interrupt long builds. A notification is enough.
 run defaults write com.apple.CrashReporter UseUNC -int 1
 
 # --- Apply ----------------------------------------------------------------

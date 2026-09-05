@@ -1,8 +1,8 @@
 # ~/.config/git/ignore — global ignores.
 #
-# For things that are never worth committing in ANY repo. Project-specific
-# patterns belong in that project's .gitignore, not here — a global rule that
-# hides a file from collaborators who don't share it causes real confusion.
+# List only what is never worth committing in ANY repo. Put project-specific
+# patterns in that project's .gitignore. A global rule that hides a file from
+# collaborators who do not share it causes confusion.
 
 # macOS
 .DS_Store
@@ -19,5 +19,5 @@
 .env.local
 .direnv/
 
-# Claude Code writes per-machine permissions here; it is explicitly local.
+# Claude Code writes per-machine permissions here. The file is local by design.
 **/.claude/settings.local.json

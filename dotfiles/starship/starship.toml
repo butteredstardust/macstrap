@@ -1,10 +1,10 @@
 # Starship — ~/.config/starship.toml
 #
-# Deliberately close to the default. A prompt that runs slow commands on every
-# keystroke is worse than a plain one; each module below is either cached by
-# starship or reads a single file.
+# Kept close to the default. A prompt that runs slow commands on every keystroke
+# is worse than a plain one. Every module below is either cached by starship or
+# reads a single file.
 #
-# Requires a Nerd Font for the glyphs (Brewfile.apps installs one).
+# The glyphs need a Nerd Font. Brewfile.apps installs one.
 # Full reference: https://starship.rs/config/
 
 add_newline = true
@@ -36,7 +36,7 @@ style = "bold purple"
 style = "bold yellow"
 
 [cmd_duration]
-min_time = 2000         # only annotate commands that actually took a while
+min_time = 2000         # ms; annotate only the commands that took a while
 format = "[ $duration]($style) "
 style = "yellow"
 
@@ -53,7 +53,7 @@ symbol = " "
 format = '[${symbol}(\($virtualenv\) )]($style)'
 
 [package]
-disabled = true         # version number of the local package is rarely useful
+disabled = true         # the local package version is rarely useful
 
 [docker_context]
 symbol = " "

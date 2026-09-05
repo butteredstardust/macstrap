@@ -35,9 +35,9 @@ else
   fi
 fi
 
-# Make brew usable for the remainder of THIS script. Note that bootstrap.sh
-# runs each step in its own child process, so this does not reach the next
-# step — every dependent script calls activate_homebrew itself.
+# Make brew usable for the rest of THIS script only. bootstrap.sh runs each step
+# in its own child process, so this PATH never reaches the next step. Every
+# dependent script calls activate_homebrew itself.
 if [ "$DRY_RUN" != "1" ]; then
   activate_homebrew || die "brew installed but not activatable at $prefix"
 

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Symlink dotfiles into place, and render the git identity from its template.
 #
-# Existing files are moved to <name>.bak-<timestamp>, never deleted.
+# Existing files move to <name>.bak-<timestamp>. Nothing is removed.
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 header "Dotfiles"
 
-# Guards repeated here, not just in preflight: this script is executable on its
-# own and via `--only`, and writing $HOME dotfiles as root would create files
-# the real user cannot edit afterwards.
+# Repeat the guards here, not only in preflight. This script runs on its own and
+# through `--only`. Writing $HOME dotfiles as root would create files the real
+# user cannot edit afterwards.
 require_macos
 refuse_root
 
@@ -18,8 +18,8 @@ link dotfiles/zsh/zshrc   "$HOME/.zshrc"
 link dotfiles/zsh/zshenv  "$HOME/.zshenv"
 link dotfiles/zsh/zprofile "$HOME/.zprofile"
 
-# Create the local override files so they exist to be edited, and so a missing
-# file never turns into a confusing "why is my secret not set".
+# Create the local override files, so they exist to be edited. A missing file
+# otherwise turns into a confusing "why is my secret not set".
 for local_file in .zshrc.local .zshenv.local; do
   if [ ! -e "$HOME/$local_file" ]; then
     run touch "$HOME/$local_file"
@@ -34,8 +34,9 @@ link dotfiles/starship/starship.toml "$HOME/.config/starship.toml"
 # --- Git ------------------------------------------------------------------
 link dotfiles/git/ignore "$HOME/.config/git/ignore"
 
-# ~/.gitconfig is COPIED, not linked: it carries your name and email, and this
-# repo is public. Regenerate it by deleting ~/.gitconfig and re-running.
+# Render ~/.gitconfig as a COPY, never a symlink. It carries your name and
+# email, and this repo is public. Regenerate it by removing ~/.gitconfig and
+# re-running this script.
 if [ -f "$HOME/.gitconfig" ] && grep -q '__GIT_NAME__' "$HOME/.gitconfig" 2>/dev/null; then
   # shellcheck disable=SC2088  # display text, not a path to be expanded
   warn "~/.gitconfig still contains template placeholders; regenerating"
@@ -59,11 +60,13 @@ if [ ! -f "$HOME/.gitconfig" ]; then
   elif [ "$DRY_RUN" = "1" ]; then
     skip "would render ~/.gitconfig from template"
   else
-    # Copy the template with the placeholders stripped, then let git itself
-    # write the identity. Interpolating the values into a sed replacement would
-    # break on the characters a real name legitimately contains: `&` expands to
-    # the whole match, and `\` and the `|` delimiter corrupt the expression.
-    # -E, not BRE: BSD grep has no `\|` alternation, same trap as BSD sed.
+    # Copy the template with the placeholders stripped. Then let git itself
+    # write the identity. Interpolating the values into a sed replacement breaks
+    # on characters a real name legitimately contains: `&` expands to the whole
+    # match, while `\` and the `|` delimiter corrupt the expression.
+    #
+    # Use -E, not BRE. BSD grep has no `\|` alternation, the same trap as BSD
+    # sed.
     grep -vE '__GIT_NAME__|__GIT_EMAIL__' \
       "$MACSTRAP_ROOT/dotfiles/git/gitconfig.template" > "$HOME/.gitconfig"
     git config --file "$HOME/.gitconfig" user.name  "$git_name"
@@ -76,8 +79,7 @@ else
 fi
 
 # --- Default shell --------------------------------------------------------
-# macOS has defaulted to zsh since Catalina, but a migrated account can still
-# be on bash.
+# macOS defaults to zsh, but a migrated account can still be on bash.
 if [ "$(basename "${SHELL:-}")" != "zsh" ]; then
   warn "login shell is $SHELL, not zsh"
   confirm "change it to /bin/zsh?" && run chsh -s /bin/zsh

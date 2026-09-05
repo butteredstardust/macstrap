@@ -4,10 +4,9 @@
 #   brew bundle --file=Brewfile
 #
 # Rules for this file:
-#   - Only direct dependencies. Never pin a transitive one (an `icu4c@75` line
-#     in a Brewfile means something leaked out of `brew leaves`, not that you
-#     wanted it).
-#   - One tool per job. If two entries solve the same problem, delete one.
+#   - Declare only direct dependencies. Never pin a transitive one. An
+#     `icu4c@75` line here means something leaked out of `brew leaves`.
+#   - One tool per job. When two entries solve the same problem, remove one.
 
 # --- Taps -----------------------------------------------------------------
 tap "oven-sh/bun"

@@ -4,7 +4,8 @@ No framework. Three Homebrew plugins, sourced directly, in a specific order.
 
 ## Which file runs when
 
-This is the single most common source of "why is my variable not set".
+Read this table before adding anything to a startup file. It answers the most common shell question:
+"why is my variable not set?"
 
 | File | Login | Interactive | Script / `zsh -c` | Put here |
 |---|:--:|:--:|:--:|---|
@@ -14,14 +15,14 @@ This is the single most common source of "why is my variable not set".
 | `.zlogin` | ✅ | — | — | rarely needed |
 
 Build tooling shells out with `zsh -c`, which **skips `.zshrc` entirely**. A signing key or API
-token exported only there is invisible to it — that is why `.zshenv` exists in this setup.
+token exported only there stays invisible to it. Export it from `.zshenv` instead.
 
-Everything slow belongs in `.zshrc`. Everything in `.zshenv` runs for every subshell of every
-script, so a single expensive command there multiplies across a build.
+Keep everything slow in `.zshrc`. `.zshenv` runs for every subshell of every script, so one
+expensive command there multiplies across a build.
 
 ## Load order in `.zshrc`
 
-Order is load-bearing. The file is written in this sequence and moving a block breaks it:
+Order is load-bearing. Moving a block breaks the file. The sequence is:
 
 1. `PATH` additions (idempotent — see below)
 2. environment, history options
@@ -32,9 +33,9 @@ Order is load-bearing. The file is written in this sequence and moving a block b
 7. `zmodload zsh/complist`
 8. `zsh-autosuggestions`, then **`zsh-syntax-highlighting` last**
 
-`zsh-syntax-highlighting` wraps every ZLE widget that exists when it loads. Anything sourced after
-it is unhighlighted, and anything that redefines a widget it already wrapped produces garbled
-redraws. Its README says "last"; it means it.
+`zsh-syntax-highlighting` wraps every ZLE widget that exists when it loads. Anything sourced after it
+stays unhighlighted. Anything redefining a widget it already wrapped produces garbled redraws. Source
+it last.
 
 ## PATH without duplicates
 
@@ -47,32 +48,34 @@ path_prepend() {
 }
 ```
 
-Blind `export PATH="X:$PATH"` stacks a new copy every time the file is sourced — and terminals
-re-exec the shell more often than you would think. The `-d` guard also stops non-existent
-directories accumulating after you uninstall something.
+A blind `export PATH="X:$PATH"` stacks a new copy every time the file is sourced. Terminals re-exec
+the shell often, so the copies add up. The `-d` guard also keeps removed directories from
+accumulating.
 
-**A hard `export PATH=...` (assignment, not append) anywhere in shell startup is a bug.** It
-discards whatever the caller set up — including the `node_modules/.bin` entry `npm run`/`bun run`
-prepend for package scripts, and any inline `PATH="..." cmd` prefix. The symptom is a package script
-failing with `eslint: command not found` while `eslint` works fine when typed by hand.
+**Never assign `PATH` in a startup file. Append to it.** An assignment discards whatever the caller
+set up. It destroys the `node_modules/.bin` entry that `npm run` and `bun run` prepend for package
+scripts. It also destroys any inline `PATH="..." cmd` prefix. The symptom: a package script fails
+with `eslint: command not found` while `eslint` works when typed by hand.
 
 ### Which file a `PATH` entry belongs in
 
-`.zshrc` is the default, because most `PATH` entries only matter to a human typing commands. An
-entry required by **non-interactive zsh** belongs in `.zshenv` instead. That is a narrower rule than
-"every compiler directory": only move it when an editor, build script, or other automation invokes
-the tool through `zsh -c`, which reads `.zshenv` and skips `.zshrc`. Rust is the case here — see
-[docs/05](05-languages.md).
+Default to `.zshrc`. Most `PATH` entries only matter to a human typing commands.
+
+Move an entry to `.zshenv` only when **non-interactive zsh** needs it. That means an editor, build
+script or other automation invokes the tool through `zsh -c`, which reads `.zshenv` and skips
+`.zshrc`. Rust is the one case here. See [docs/05](05-languages.md).
 
 ### Prepend or append
 
-Prepending means "this wins over the system copy", and that is a claim worth making deliberately.
-Where a directory may hold a *stale duplicate* of something another manager owns, append instead.
-`~/.cargo/bin` is the example: `cargo install` writes there, so it must stay reachable, but the
-upstream rustup installer also leaves shims there and its own `~/.cargo/env` prepends the directory
-— which can silently outrank the Homebrew-managed toolchain. Appending alone cannot repair an
-already-bad inherited order, so `.zshenv` removes both Rust entries before rebuilding their order:
-Homebrew rustup first and `~/.cargo/bin` last.
+Prepending claims "this wins over the system copy". Make that claim deliberately.
+
+Append instead where a directory may hold a stale duplicate of something another manager owns.
+`~/.cargo/bin` is that case. `cargo install` writes there, so it must stay reachable. The upstream
+rustup installer also leaves shims there, and its `~/.cargo/env` prepends the directory ahead of the
+Homebrew-managed toolchain.
+
+Appending alone cannot repair a bad order inherited from a parent process. So `.zshenv` removes both
+Rust entries, then rebuilds the order: Homebrew rustup first, `~/.cargo/bin` last.
 
 ## Completion
 
@@ -80,9 +83,9 @@ Homebrew rustup first and `~/.cargo/bin` last.
 zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 ```
 
-The macOS filesystem is case-insensitive, so `cd ~/dev` works and you type lowercase out of habit —
-but zsh completion is case-sensitive by default, so Tab there matches nothing and looks broken. The
-rule tries exact first, then lower→upper, then partial-word (`~/D/pr` → `~/Dev/project`).
+The macOS filesystem is case-insensitive, so `cd ~/dev` works and lowercase becomes a habit. zsh
+completion is case-sensitive by default, so Tab matches nothing there and looks broken. This rule
+tries exact first, then lower→upper, then partial word (`~/D/pr` → `~/Dev/project`).
 
 | Setting | Effect |
 |---|---|
@@ -102,13 +105,13 @@ If completions stop updating after installing a formula: `rm -f ~/.zcompdump ~/.
 | `HIST_IGNORE_SPACE` | a leading space keeps a command out of history (use for secrets) |
 | `HIST_VERIFY` | `!!` expands into the buffer for review instead of executing |
 
-Up/Down are bound to `history-beginning-search-*-end`: they search history for what you have
+Up and Down are bound to `history-beginning-search-*-end`. They search history for what you have
 already typed, instead of walking every command blindly.
 
 ## Ghostty over SSH
 
-Ghostty sets `TERM=xterm-ghostty`, which almost no remote host has a terminfo entry for. Without it
-the remote side falls back to something crippled: garbled redraws, dead arrow keys, broken TUIs.
+Ghostty sets `TERM=xterm-ghostty`. Almost no remote host ships that terminfo entry. Without it the
+remote side falls back to a crippled terminal: garbled redraws, dead arrow keys, broken TUIs.
 
 ```bash
 ghostty-terminfo user@host      # push the entry once per host
@@ -126,5 +129,5 @@ Use `ssh-dumb` for hosts you cannot or should not write to — shared boxes, app
 | `~/.zprofile.local` | `.zprofile`, last | ❌ |
 | `~/.gitconfig.local` | `.gitconfig` `[include]` | ❌ |
 
-Anything with a token, a hostname, an internal URL, or an absolute path unique to one machine goes
-in these. Nothing in this repo should ever need editing to make it work on a second machine.
+Put anything with a token, a hostname, an internal URL or a machine-specific path in these files.
+Nothing in this repo should need editing to work on a second machine.

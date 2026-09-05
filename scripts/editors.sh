@@ -13,25 +13,25 @@ VSCODE_USER_DIR="$HOME/Library/Application Support/Code/User"
 if have code || [ "$DRY_RUN" = "1" ]; then
   run mkdir -p "$VSCODE_USER_DIR"
 
-  # settings.json is MERGED, not symlinked — and this is not a style choice.
+  # MERGE settings.json, never symlink it.
   #
-  # VS Code writes to this file itself: extensions persist state into it, and
-  # several of them persist secrets. On the machine this repo was distilled
-  # from it held an ANTHROPIC_AUTH_TOKEN and a localhost service URL, put there
-  # by an extension's settings UI, not by hand. A symlink would have committed
-  # both to a public repo the next time the extension touched them.
+  # VS Code writes to this file itself. Extensions persist state into it, and
+  # several persist secrets — auth tokens and localhost service URLs land here,
+  # written by an extension's settings UI rather than by hand. A symlink would
+  # publish them to this public repo the next time an extension saved.
   #
-  # So: the repo's keys are authoritative for the keys the repo declares, and
-  # anything else already in the file is left alone. Same rule as ~/.gitconfig.
-  # python3 is guaranteed present — the Command Line Tools ship it, and
-  # preflight installs those.
+  # So the repo's keys win for the keys the repo declares, and everything else
+  # in the file stays untouched. Same rule as ~/.gitconfig.
+  #
+  # python3 is always present: the Command Line Tools ship it, and preflight
+  # installs those.
   if [ "$DRY_RUN" = "1" ]; then
     skip "would merge dotfiles/vscode/settings.json into $VSCODE_USER_DIR/settings.json"
   else
-    # backup_copy, NOT backup: the merge below reads this same file. `backup`
-    # moves it aside, so the merge would find nothing, start from an empty
-    # object and write only the repo's keys — silently deleting every setting
-    # VS Code had put there itself.
+    # Use backup_copy, NOT backup. The merge below reads this same file.
+    # `backup` moves it aside, so the merge would find nothing, start from an
+    # empty object, and write only the repo's keys. That would remove every
+    # setting VS Code put there itself.
     backup_copy "$VSCODE_USER_DIR/settings.json"
     MACSTRAP_ROOT="$MACSTRAP_ROOT" VSCODE_USER_DIR="$VSCODE_USER_DIR" python3 - <<'PY'
 import collections, json, os, re
@@ -41,14 +41,13 @@ src = os.path.join(os.environ["MACSTRAP_ROOT"], "dotfiles/vscode/settings.json")
 
 
 def load(path):
-    """VS Code writes JSONC: line comments, block comments, trailing commas.
+    """Parse the JSONC that VS Code writes: line and block comments, trailing commas.
 
-    The comment patterns are deliberately anchored to the start of a line.
-    Stripping `//` anywhere would eat the rest of any line containing a URL —
-    and this file holds URLs (an extension's endpoint, a proxy address), so an
-    unanchored pattern would silently corrupt real settings rather than fail
-    loudly. Comments inside a value are left alone; JSON has no way to express
-    one, so they cannot occur there.
+    Keep both comment patterns anchored to the start of a line. Stripping `//`
+    anywhere would eat the rest of any line holding a URL, and this file holds
+    URLs such as an extension endpoint or a proxy address. An unanchored pattern
+    would corrupt real settings instead of failing loudly. Comments inside a
+    value stay untouched, and JSON cannot express one anyway.
     """
     if not os.path.exists(path):
         return collections.OrderedDict()
@@ -64,10 +63,10 @@ def load(path):
 try:
     merged = load(dst)
 except ValueError as exc:
-    # Refuse rather than guess. This script runs under `set -e`, so raising
-    # would kill the whole editors step; and whatever is unparseable here is a
-    # file the user edited by hand, which makes overwriting it the worst of the
-    # available options. The backup_copy above is already in place.
+    # Refuse rather than guess. Raising would kill the whole editors step under
+    # `set -e`. An unparseable file here is one the user edited by hand, so
+    # overwriting it is the worst available option. The backup_copy above is
+    # already in place.
     print("  !! %s is not valid JSON/JSONC: %s" % (dst, exc))
     print("  !! settings left untouched. Fix the file, then re-run scripts/editors.sh")
     raise SystemExit(0)
@@ -110,7 +109,7 @@ else
 fi
 
 # --- Claude Code ----------------------------------------------------------
-# Not available via Homebrew; it ships its own installer that self-updates.
+# Homebrew does not carry it. It ships its own self-updating installer.
 if have claude; then
   ok "claude $(claude --version 2>/dev/null | head -1)"
 elif confirm "Install Claude Code CLI?"; then

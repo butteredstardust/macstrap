@@ -7,8 +7,8 @@ set -euo pipefail
 
 header "Doctor"
 
-# Match what the provisioning scripts see, not what your interactive shell
-# happens to have — otherwise doctor passes on a machine where bootstrap fails.
+# Check the PATH the provisioning scripts see, not the interactive shell's.
+# Otherwise doctor passes on a machine where bootstrap fails.
 activate_homebrew || warn "Homebrew not found"
 
 failures=0
@@ -63,8 +63,8 @@ else
 fi
 
 # --- Fonts ----------------------------------------------------------------
-# Globbed rather than `ls | grep`: filenames with spaces are the norm for fonts,
-# and `ls` is aliased to eza in this very setup's .zshrc.
+# Glob instead of `ls | grep`. Font filenames hold spaces, and this setup
+# aliases `ls` to eza.
 font_found=0
 for dir in "$HOME/Library/Fonts" /Library/Fonts; do
   [ -d "$dir" ] || continue
@@ -81,11 +81,11 @@ else
 fi
 
 # --- Shell startup cost ---------------------------------------------------
-# A slow shell is almost always a plugin doing work at load time. Anything over
-# half a second is worth bisecting.
+# A slow shell is almost always a plugin doing work at load time. Bisect
+# anything over half a second.
 #
-# Timed with bash's `time` builtin rather than `date`: BSD date has no %N, so
-# arithmetic on it can only ever resolve whole seconds.
+# Time this with bash's `time` builtin, not `date`. BSD date has no %N, so
+# arithmetic on it resolves whole seconds only.
 if have zsh; then
   elapsed="$( { TIMEFORMAT=%R; time zsh -i -c exit; } 2>&1 | tail -1 )"
   # %R is "0.412". Convert to integer milliseconds by splitting on the dot;

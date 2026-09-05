@@ -2,8 +2,9 @@
 #
 #   brew bundle --file=Brewfile.apps
 #
-# Casks that need an admin password (Docker Desktop) will prompt. Everything
-# here is a tool, not entertainment — see Brewfile.optional for the rest.
+# Casks needing an admin password, such as Docker Desktop, prompt for one.
+# Everything here is a tool, not entertainment. See Brewfile.optional for the
+# rest.
 
 # --- Terminal & fonts -----------------------------------------------------
 cask "ghostty"                          # config in dotfiles/ghostty

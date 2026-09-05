@@ -1,6 +1,6 @@
 # 10 — Maintenance
 
-The point of this repo is that the machine stays close to what is written down. That needs a routine.
+This repo keeps the machine close to what is written down. That needs a routine.
 
 ## Weekly
 
@@ -8,8 +8,8 @@ The point of this repo is that the machine stays close to what is written down. 
 topgrade            # brew, casks, npm, cargo, rustup, uv, App Store, macOS
 ```
 
-`topgrade` walks every package manager it detects. Config lives at `~/.config/topgrade.toml`;
-disable steps you do not want:
+`topgrade` walks every package manager it detects. Its config lives at `~/.config/topgrade.toml`.
+Disable the steps you do not want:
 
 ```toml
 [misc]
@@ -35,11 +35,11 @@ brew cleanup --prune=all   # delete old downloads and versions
 brew doctor
 ```
 
-`brew cleanup` reclaims real space — a year-old cache is routinely 5–15 GB.
+`brew cleanup` reclaims real space. A year-old cache is routinely 5–15 GB.
 
 ## Catching drift
 
-This is the step that prevents the cruft this repo was built to avoid.
+This step is what keeps undeclared packages from accumulating.
 
 ```bash
 scripts/packages.sh         # reports anything installed but not in a Brewfile
@@ -56,12 +56,12 @@ Then, for each undeclared entry, make a decision:
 
 | Situation | Action |
 |---|---|
-| you use it | add it to the right Brewfile, commit |
+| you use it | add it to the right Brewfile, then commit |
 | you tried it once | `brew uninstall <name>` |
-| you don't recognise it | `brew uses --installed <name>` — if nothing needs it, remove it |
+| you don't recognise it | run `brew uses --installed <name>`. If nothing needs it, remove it |
 
-**Never let "I'll sort it later" accumulate.** Deciding on one package a month is trivial; deciding
-on forty after two years is why people wipe and reinstall.
+**Decide on every entry now.** One package a month is trivial. Forty packages after two years is why
+people wipe and reinstall.
 
 ## Capturing a change
 
@@ -79,7 +79,7 @@ code --list-extensions > dotfiles/vscode/extensions.txt
 git -C "$MACSTRAP_ROOT" status
 ```
 
-Symlinking rather than copying is what makes this work: editing `~/.zshrc` *is* editing the repo.
+Symlinks are what make this work. Editing `~/.zshrc` *is* editing the repo.
 
 ## Disk
 
@@ -92,17 +92,18 @@ rm -rf ~/Library/Developer/Xcode/DerivedData
 ```
 
 `docker system prune -a` removes every image not backing a running container. Anything you cannot
-re-pull is gone — check first if you build images locally.
+re-pull is gone. Check first if you build images locally.
 
 ## Migrating to a new Mac
 
-Do **not** use Migration Assistant for the dev environment. It faithfully copies the cruft.
+Do **not** use Migration Assistant for the dev environment. It copies the cruft faithfully.
 
 ```bash
 git clone https://github.com/<you>/macstrap.git ~/Dev/macstrap
 cd ~/Dev/macstrap && ./bootstrap.sh
 ```
 
-Then move by hand, deliberately: SSH keys (or generate new ones — better), `~/.zshrc.local` and
-`~/.zshenv.local`, and password manager vaults. Everything else should come from this repo. If it
-does not, that is a gap in the repo — fix it there.
+Then move three things by hand: SSH keys, `~/.zshrc.local` and `~/.zshenv.local`, and password
+manager vaults. Generating fresh SSH keys is better than moving them.
+
+Everything else should come from this repo. Anything that does not is a gap. Fix it in the repo.

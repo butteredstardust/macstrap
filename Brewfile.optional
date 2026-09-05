@@ -2,7 +2,7 @@
 #
 #   brew bundle --file=Brewfile.optional
 #
-# Nothing here is required for a working dev machine. Delete freely — this file
+# Nothing here is required for a working dev machine. Remove freely. This file
 # is the designated home for "I might want this", so the core Brewfile stays
 # honest.
 

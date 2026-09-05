@@ -2,8 +2,9 @@
 
 ## Modern replacements
 
-Each of these replaces a BSD coreutil that is slower, less readable, or both. The aliases are set in
-`dotfiles/zsh/zshrc`, guarded by `command -v` so the shell still works if a tool is missing.
+Each tool below replaces a BSD coreutil that is slower, less readable, or both. `dotfiles/zsh/zshrc`
+sets the aliases. Each alias is guarded by `command -v`, so the shell still works when a tool is
+missing.
 
 | Replaces | Tool | Why |
 |---|---|---|
@@ -17,9 +18,9 @@ Each of these replaces a BSD coreutil that is slower, less readable, or both. Th
 | `diff` | `git-delta` | side-by-side, syntax-highlighted; wired into git as pager |
 | `curl` (interactive) | `httpie` | sane defaults for exploring APIs. Keep `curl` for scripts |
 
-**Aliasing caveat:** `alias cat='bat --paging=never'` is fine interactively, but `bat` is not a
-drop-in for scripts. Aliases are not expanded in non-interactive shells, so scripts still get the
-real `cat` — this is why the aliases live in `.zshrc` and not `.zshenv`.
+**Aliasing caveat:** `bat` is not a drop-in replacement for `cat` in scripts. Keep the aliases in
+`.zshrc`, never in `.zshenv`. Non-interactive shells do not expand aliases, so scripts keep getting
+the real `cat`.
 
 ## Kept as-is
 
@@ -34,11 +35,11 @@ real `cat` — this is why the aliases live in `.zshrc` and not `.zshenv`.
 
 | Tool | Verdict |
 |---|---|
-| `ack` | superseded by `ripgrep` in every dimension. In `Brewfile.optional` for muscle memory only |
-| `nvm` | slow to source (~200ms per shell) and unnecessary when brew's node plus per-project `corepack` cover it. Optional |
-| `pipx` | `uv tool install` does the same thing, faster, and you already have `uv` |
-| `pyenv` | `uv python install` manages interpreters now |
-| `oh-my-zsh` | a framework to configure three plugins you can source in three lines. See `docs/03-shell.md` |
+| `ack` | superseded by `ripgrep` in every dimension. Kept in `Brewfile.optional` for muscle memory |
+| `nvm` | costs ~200ms per shell to source. Homebrew's node covers the common case. In `Brewfile.optional` |
+| `pipx` | `uv tool install` does the same job, faster, with a tool you already have |
+| `pyenv` | `uv python install` manages interpreters |
+| `oh-my-zsh` | a framework for three plugins you can source in three lines. See `docs/03-shell.md` |
 
 ## GitHub CLI
 
@@ -47,7 +48,7 @@ gh auth login          # browser flow; stores the token in the Keychain
 gh auth status
 ```
 
-`gh` also configures git's credential helper, which is why HTTPS pushes stop asking for a password.
+`gh` also configures git's credential helper. HTTPS pushes then stop asking for a password.
 
 ## Verify
 

@@ -1,32 +1,32 @@
 # ~/.zshenv — sourced by EVERY zsh, including non-interactive ones.
 #
-# Managed by macstrap. Keep this file tiny and side-effect free: it runs for
-# every script, every editor subshell, every `ssh host command`. Anything slow
-# or interactive belongs in ~/.zshrc.
+# WARNING: this file runs for every script, every editor subshell and every
+# `ssh host command`. Keep it small and free of side effects. Put anything slow
+# or interactive in ~/.zshrc.
 #
-# The one thing that legitimately lives here is environment a *non-interactive*
-# tool needs. Build tooling shells out with `zsh -c`, which skips .zshrc
-# entirely — a variable exported only there is invisible to it.
+# Managed by macstrap. Only one thing belongs here: environment a
+# non-interactive tool needs. Build tooling shells out with `zsh -c`, which
+# skips .zshrc. A variable exported only there is invisible to it.
 
 # Rust toolchain, needed by editors and build scripts that never see .zshrc.
 #
-# rustup comes from Homebrew, and Homebrew keeps it keg-only because it
-# conflicts with the `rust` formula — so `cargo`, `rustc` and friends are never
-# symlinked into bin/ and exist only here. `rustup` alone is symlinked into
-# bin/, which is worse than it sounds: without this line a non-interactive
-# shell finds `rustup` but not `cargo`, and the failure looks like a broken
-# toolchain rather than a missing PATH entry.
+# Homebrew owns rustup, and keeps it keg-only because it conflicts with the
+# `rust` formula. So `cargo` and `rustc` are never symlinked into bin/ and live
+# only in this directory. `rustup` alone is symlinked. Without this block a
+# non-interactive shell finds `rustup` but not `cargo`, and the failure reads as
+# a broken toolchain rather than a missing PATH entry.
 #
-# Deliberately NOT `. "$HOME/.cargo/env"`. That file is written by the upstream
-# rustup.rs installer and prepends ~/.cargo/bin, whose shims are a second,
-# independently-versioned copy of rustup. Both dispatch to the same toolchains
-# in ~/.rustup, so the split is invisible until the two versions disagree.
-# One installer owns rustup here, and it is Homebrew. See docs/05-languages.md.
+# Do NOT source "$HOME/.cargo/env" instead. The upstream rustup.rs installer
+# writes that file, and it prepends ~/.cargo/bin. Those shims are a second,
+# independently versioned copy of rustup. Both dispatch to the same toolchains
+# in ~/.rustup, so the split stays invisible until the versions disagree. One
+# installer owns rustup here. See docs/05-languages.md.
 #
-# Hardcoded rather than `$(brew --prefix rustup)`: shelling out to brew costs
-# ~100ms, and this file runs for every zsh, including every `zsh -c` a build
-# script spawns. Rebuild the order rather than using an append-if-missing guard:
-# a parent process may already have supplied the same entries in the wrong order.
+# Hardcode the prefix rather than call `$(brew --prefix rustup)`. Shelling out
+# to brew costs ~100ms, and this file runs for every zsh.
+#
+# Rebuild the PATH order rather than append if missing. A parent process may
+# already have supplied the same entries in the wrong order.
 _macstrap_rustup_dir=""
 if [ -d /opt/homebrew/opt/rustup/bin ]; then
   _macstrap_rustup_dir=/opt/homebrew/opt/rustup/bin
@@ -34,9 +34,9 @@ elif [ -d /usr/local/opt/rustup/bin ]; then
   _macstrap_rustup_dir=/usr/local/opt/rustup/bin
 fi
 
-# ~/.cargo/bin is still where `cargo install` writes, so it has to stay
-# reachable — but after Homebrew's rustup directory. Remove every occurrence
-# of both entries first, preserving everything else inherited from the caller.
+# `cargo install` still writes to ~/.cargo/bin, so keep it reachable. Place it
+# after Homebrew's rustup directory. Remove every occurrence of both entries
+# first, and preserve everything else inherited from the caller.
 if [ -n "$_macstrap_rustup_dir" ] || [ -d "$HOME/.cargo/bin" ]; then
   typeset -a _macstrap_path _macstrap_clean_path
   _macstrap_path=("${(@s/:/)PATH}")
@@ -53,8 +53,8 @@ if [ -n "$_macstrap_rustup_dir" ] || [ -d "$HOME/.cargo/bin" ]; then
 fi
 unset _macstrap_rustup_dir _macstrap_path _macstrap_clean_path _macstrap_path_entry
 
-# Machine-local secrets and signing keys. Read from a file rather than pasted,
-# so the value lives in exactly one place and never reaches this repo.
+# Machine-local secrets and signing keys. Read each value from a file rather
+# than paste it, so it lives in one place and never reaches this repo.
 #
 # Example ~/.zshenv.local:
 #   if [ -r "$HOME/.keys/updater.key" ]; then

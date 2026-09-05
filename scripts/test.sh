@@ -3,9 +3,8 @@
 #
 #   scripts/test.sh
 #
-# Exists because the expensive bugs in this repo were all things a dry-run
-# could not catch: a flag that only fails when actually executed, a BSD-vs-GNU
-# regex difference, a PATH that only breaks on a machine without Homebrew.
+# Catches the bugs a dry run cannot: a flag that only fails when executed, a
+# BSD-vs-GNU regex difference, a PATH that only breaks without Homebrew.
 set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -17,7 +16,7 @@ fail() { warn "$*"; fails=$((fails + 1)); }
 
 # --- 1. Syntax, under the OLDEST bash we must support ---------------------
 # /bin/bash on macOS is 3.2. A script that only parses under Homebrew's bash 5
-# breaks on exactly the fresh machine this repo exists to provision.
+# breaks on the fresh machine this repo exists to provision.
 header "bash 3.2 syntax"
 for f in "$MACSTRAP_ROOT"/bootstrap.sh "$MACSTRAP_ROOT"/scripts/*.sh; do
   if /bin/bash -n "$f" 2>/dev/null; then
@@ -42,11 +41,11 @@ else
 fi
 
 # --- 3. GNU-only constructs -----------------------------------------------
-# The tools here are BSD. `\|` alternation in BRE matches nothing rather than
-# erroring, so this class of bug is silent — it has already bitten twice.
+# The tools here are BSD. In BRE, `\|` alternation matches nothing instead of
+# erroring, so this class of bug fails silently.
 header "BSD tool compatibility"
-# --exclude this file throughout: it necessarily contains the very patterns it
-# searches for, and would otherwise always fail against itself.
+# --exclude this file from every scan below. It necessarily holds the patterns
+# it searches for, and would otherwise always fail against itself.
 if grep -rnE "(sed|grep)( -[a-zA-Z]+)* ['\"][^'\"]*\\\\\|" \
      "$MACSTRAP_ROOT/scripts" "$MACSTRAP_ROOT/bootstrap.sh" \
      --exclude="test.sh" 2>/dev/null; then
@@ -55,7 +54,7 @@ else
   ok "no BRE alternation"
 fi
 
-# -E here for the same reason this check exists at all.
+# Use -E here for the same reason this check exists at all.
 if grep -rnE "date \+%N|readlink -f|sed -i '[^']" \
      "$MACSTRAP_ROOT/scripts" --exclude="test.sh" 2>/dev/null; then
   fail "GNU-only tool usage found (date %N / readlink -f / sed -i without arg)"
@@ -68,7 +67,7 @@ header "Brewfiles"
 for bundle in Brewfile Brewfile.apps Brewfile.optional; do
   f="$MACSTRAP_ROOT/$bundle"
   [ -f "$f" ] || continue
-  # A flag that does not exist only fails at execution time, never in a dry run.
+  # A non-existent flag fails at execution time only, never in a dry run.
   if grep -q -- '--no-lock' "$f"; then
     fail "$bundle references --no-lock, which brew bundle rejects"
   fi
@@ -81,8 +80,8 @@ else
   ok "no --no-lock in scripts"
 fi
 
-# Duplicate declarations across bundles: installing the same thing twice from
-# two files is the exact drift this repo exists to prevent.
+# Catch duplicate declarations across bundles. Installing one package from two
+# files is the drift this repo exists to prevent.
 dupes="$(cat "$MACSTRAP_ROOT"/Brewfile* 2>/dev/null \
   | sed -nE 's/^[[:space:]]*(brew|cask) "([^"]*)".*/\2/p' \
   | sed 's#.*/##' | sort | uniq -d)"
@@ -94,10 +93,10 @@ fi
 
 # --- 5. Secret / identity scan --------------------------------------------
 header "privacy"
-# In a repository, scan exactly what could be published: tracked files plus
-# untracked, non-ignored files. Local logs, caches and Brewfile.local are
-# intentionally outside that boundary. Fall back to the old recursive scan
-# when git is unavailable or this copy is not a worktree.
+# Scan exactly what could be published: tracked files, plus untracked files that
+# are not ignored. Local logs, caches and Brewfile.local sit outside that
+# boundary on purpose. Fall back to a recursive scan when git is unavailable or
+# this copy is not a worktree.
 privacy_files="$TMPDIR_TEST/privacy-files"
 privacy_uses_git=0
 if have git && git -C "$MACSTRAP_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -119,15 +118,15 @@ privacy_match() {
     --exclude-dir=.git --exclude="test.sh" >/dev/null 2>&1
 }
 
-# Anything matching here would identify the author once the repo is public.
+# A match here would identify the author once the repo is public.
 if privacy_match '(api[_-]?key|auth[_-]?token|secret[_-]?key|password)[[:space:]]*=[[:space:]]*["'\''][^"'\'']+'; then
   fail "possible hardcoded credential"
 else
   ok "no hardcoded credentials"
 fi
 
-# A literal home path leaks the account name. $HOME is the portable form, and
-# a hardcoded one would also simply be wrong on anyone else's machine.
+# A literal home path leaks the account name. It is also wrong on anyone else's
+# machine. Use $HOME.
 if privacy_match '/Users/[a-z]'; then
   fail "hardcoded /Users/<name> path found — use \$HOME"
 else
@@ -135,18 +134,16 @@ else
 fi
 
 # --- 6. Fresh-machine dry run ---------------------------------------------
-# The one behavioural test here, and it earns its runtime: every serious bug
-# this repo has had was invisible on a provisioned machine and only appeared
-# where nothing was installed yet. Static checks cannot catch those.
+# The one behavioural test here, and it earns its runtime. The serious bugs in
+# this repo hide on a provisioned machine and appear only where nothing is
+# installed yet. Static checks cannot catch those.
 #
-# Simulate it by copying the repo and stubbing brew_prefix() to fail, which is
+# Simulate a fresh Mac: copy the repo, then stub brew_prefix() to fail. That is
 # what a Mac with no Homebrew looks like to these scripts. Then assert that
-# --dry-run previews ALL of it. It used to die at the packages step, so
-# `./bootstrap.sh --dry-run` — the first command the README suggests — showed a
-# new user two steps out of six and exited 1.
+# --dry-run previews every step, not just the ones before packages.
 #
-# Nothing is installed or modified: DRY_RUN=1 routes every action through
-# `run`, which prints.
+# Nothing installs or changes here. DRY_RUN=1 routes every action through `run`,
+# which prints.
 header "fresh-machine dry run"
 fresh="$TMPDIR_TEST/fresh"
 cp -R "$MACSTRAP_ROOT" "$fresh" 2>/dev/null
@@ -156,9 +153,9 @@ rm -rf "$fresh/.git"
 awk '/^brew_prefix\(\) \{$/ { print; print "  return 1  # test stub: no Homebrew"; next } { print }' \
   "$fresh/scripts/lib.sh" > "$fresh/scripts/lib.sh.tmp" && mv "$fresh/scripts/lib.sh.tmp" "$fresh/scripts/lib.sh"
 
-# `env -u BASH_ENV` matters: if BASH_ENV points at a profile that appends
-# Homebrew to PATH, `have brew` succeeds and the whole simulation is void —
-# the run passes while testing nothing.
+# `env -u BASH_ENV` matters. When BASH_ENV points at a profile that appends
+# Homebrew to PATH, `have brew` succeeds and the simulation is void. The run
+# then passes while testing nothing.
 if env -u BASH_ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
      "$fresh/bootstrap.sh" --dry-run --with-optional > "$TMPDIR_TEST/fresh.log" 2>&1; then
   actions_seen=0
@@ -183,16 +180,14 @@ fi
 # --- 7. PATH activation regressions ---------------------------------------
 header "Homebrew PATH activation"
 
-# editors.sh must activate Homebrew itself: bootstrap runs every step in a
-# separate child, so the PATH changed by homebrew.sh cannot reach this script.
+# editors.sh must activate Homebrew itself. bootstrap runs every step in a
+# separate child, so the PATH set by homebrew.sh never reaches this script.
 #
-# Assert the CALL, via a stub that records being invoked — not the output. The
-# obvious version of this test asserts that the settings merge and an extension
-# install were previewed, and it passes whether or not editors.sh activates
-# anything: `have code || [ "$DRY_RUN" = "1" ]` previews them regardless. That
-# version was written, passed, and still passed with the activate_homebrew line
-# commented out. A test that cannot fail is worse than no test, because it is
-# also a claim.
+# Assert the CALL through a stub that records being invoked, not the output.
+# Asserting the output instead passes whether or not editors.sh activates
+# anything, because `have code || [ "$DRY_RUN" = "1" ]` previews the merge and
+# the extension install regardless. A test that cannot fail is worse than no
+# test, because it is also a claim.
 marker="$TMPDIR_TEST/activate-called"
 if env -u BASH_ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin" DRY_RUN=1 \
      MACSTRAP_TEST_MARKER="$marker" \
@@ -206,7 +201,7 @@ else
   fail "editors.sh never called activate_homebrew — 'code' is invisible on a fresh Mac"
 fi
 
-# Seeing brew already must not short-circuit the keg-only rustup PATH entry.
+# Finding brew already on PATH must not skip the keg-only rustup PATH entry.
 brew_bin="$TMPDIR_TEST/brew-bin"
 brew_prefix_test="$TMPDIR_TEST/brew-prefix"
 mkdir -p "$brew_bin" "$brew_prefix_test/opt/rustup/bin"
@@ -226,8 +221,8 @@ fi
 # --- 8. Docs referential integrity ----------------------------------------
 header "docs"
 missing=0
-# Fed by a pipeline rather than `for doc in $(...)`: a path is one line, not one
-# word, and word splitting would break the first filename containing a space.
+# Feed this from a pipeline, not `for doc in $(...)`. A path is one line, not
+# one word, and word splitting breaks the first filename holding a space.
 grep -ohE 'docs/[0-9]{2}-[a-z-]+\.md' "$MACSTRAP_ROOT"/README.md \
      "$MACSTRAP_ROOT"/docs/*.md "$MACSTRAP_ROOT"/scripts/*.sh 2>/dev/null \
   | sort -u > "$TMPDIR_TEST/refs"

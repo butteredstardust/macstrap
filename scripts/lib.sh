@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Shared helpers. Sourced by every script in this directory.
 #
-# Written for bash 3.2 — the version macOS ships — because bootstrap runs
-# before Homebrew's modern bash exists. No associative arrays, no `readarray`.
+# Target bash 3.2, the version macOS ships. Bootstrap runs before Homebrew's
+# modern bash exists. So: no associative arrays, no `readarray`.
 
 # Guard against double-sourcing.
 [ -n "${MACSTRAP_LIB_LOADED:-}" ] && return 0
@@ -33,8 +33,8 @@ header() { printf '\n%s%s%s\n' "$C_BOLD" "$*" "$C_RESET"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 # --- Execution ------------------------------------------------------------
-# run <cmd> [args...] — honours DRY_RUN. Arguments are passed through as an
-# array, never re-parsed by a shell, so paths with spaces survive.
+# run <cmd> [args...] — honours DRY_RUN. Passes arguments through as an array.
+# No shell re-parses them, so paths with spaces survive.
 run() {
   if [ "$DRY_RUN" = "1" ]; then
     printf '%s  would run:%s %s\n' "$C_DIM" "$C_RESET" "$*"
@@ -43,8 +43,8 @@ run() {
   "$@"
 }
 
-# confirm <prompt> — returns 0 for yes. Auto-yes under --yes, and auto-no when
-# there is no terminal to ask on (so an unattended run never hangs).
+# confirm <prompt> — returns 0 for yes. Answers yes under --yes. Answers no
+# when there is no terminal to ask on, so an unattended run never hangs.
 confirm() {
   [ "$ASSUME_YES" = "1" ] && return 0
   [ -t 0 ] || { warn "not a terminal, assuming no: $1"; return 1; }
@@ -57,10 +57,10 @@ confirm() {
 # backup <path>            — move the file aside. Use before REPLACING it.
 # backup_copy <path>       — copy it aside. Use before EDITING IT IN PLACE.
 #
-# Getting these two confused is a data-loss bug, not a style question: a merge
-# that runs `backup` first finds nothing left to merge into and silently writes
-# only the new content. Ask "does the next step still need to read this file?"
-# — if yes, it is backup_copy.
+# WARNING: confusing these two loses data. A merge that runs `backup` first
+# finds nothing to merge into, then writes only the new content.
+#
+# Ask: does the next step still need to read this file? If yes, use backup_copy.
 backup_copy() {
   local target="$1"
   [ -f "$target" ] || return 0
@@ -70,9 +70,9 @@ backup_copy() {
   run cp -p "$target" "$dest"
 }
 
-# Shared naming. Second resolution is not enough: two files handled in the same
-# second would collide, and `mv` onto an existing directory nests instead of
-# failing. Find a free name rather than trusting the timestamp.
+# Shared naming for both helpers. Second resolution is not enough: two files
+# handled in the same second collide, and `mv` onto an existing directory nests
+# instead of failing. So find a free name rather than trusting the timestamp.
 _backup_dest() {
   local target="$1" stamp dest n=0
   stamp="$(date +%Y%m%d-%H%M%S)"
@@ -96,9 +96,9 @@ backup() {
 
 # link <source-in-repo> <destination> — idempotent symlink.
 #
-# Symlinks rather than copies, so editing the file in the repo takes effect
-# immediately and `git status` shows drift. The exception is anything holding
-# an identity or a secret; those get copied from a template instead.
+# Symlink rather than copy, so editing the repo file takes effect immediately
+# and `git status` shows drift. Files holding an identity or a secret are the
+# exception; render those from a template instead.
 link() {
   local src="$MACSTRAP_ROOT/$1" dst="$2"
   [ -e "$src" ] || die "missing source file: $src"
@@ -119,8 +119,8 @@ require_macos() {
   [ "$(uname -s)" = "Darwin" ] || die "macstrap is macOS-only (found $(uname -s))"
 }
 
-# Refuse to run as root. Homebrew flatly rejects it, and anything this script
-# writes as root leaves files the real user cannot edit afterwards.
+# Refuse to run as root. Homebrew rejects it outright, and anything written as
+# root leaves files the real user cannot edit afterwards.
 refuse_root() {
   [ "$(id -u)" != "0" ] || die "do not run macstrap with sudo; it will ask when it needs to"
 }
@@ -132,38 +132,37 @@ brew_prefix() {
   fi
 }
 
-# The expected prefix for this architecture, whether or not brew exists yet.
-# Needed by --dry-run on a machine that has no Homebrew: the real prefix cannot
-# be probed, but the actions that depend on it still have to be printable.
+# Report the expected prefix for this architecture, whether or not brew exists.
+# --dry-run needs this on a machine with no Homebrew: nothing can probe the real
+# prefix, yet the actions depending on it must still print.
 brew_prefix_expected() {
   [ "$(uname -m)" = "arm64" ] && echo /opt/homebrew || echo /usr/local
 }
 
-# Put Homebrew on PATH for the current process.
+# Put Homebrew on PATH for the current process. Every dependent script calls
+# this before using brew.
 #
 # bootstrap.sh runs each step in its own `bash` child, so the `brew shellenv`
-# evaluated inside homebrew.sh dies with that child. On an already-provisioned
-# machine this is invisible — brew is on PATH from ~/.zprofile — but on a
-# genuinely fresh Mac every step after homebrew.sh would inherit the original
-# pre-Homebrew PATH and fail. Every dependent script calls this.
+# evaluated inside homebrew.sh dies with that child. A provisioned machine hides
+# this, because ~/.zprofile already puts brew on PATH. On a fresh Mac, every step
+# after homebrew.sh would otherwise inherit the pre-Homebrew PATH and fail.
 activate_homebrew() {
   local prefix
   if have brew; then
     prefix="$(brew --prefix)" || return 1
   elif ! prefix="$(brew_prefix)"; then
-    # A dry run on a genuinely fresh Mac reaches here, and it is not an error.
-    # homebrew.sh only *printed* what it would do, so no brew binary exists —
-    # yet this is the one machine where previewing the rest of the run matters.
-    # Returning 1 here made packages.sh `die`, which bootstrap.sh treats as
-    # fatal, so `./bootstrap.sh --dry-run` — the first command the README
-    # suggests — aborted after the Homebrew step and never previewed dotfiles,
-    # languages or editors. Invisible on a provisioned machine, where `have
-    # brew` returns at the top.
+    # A dry run on a fresh Mac reaches here, and that is not an error.
+    # homebrew.sh only *printed* what it would do, so no brew binary exists.
+    # This is also the one machine where previewing the rest of the run matters.
     #
-    # Succeeding is safe: under DRY_RUN every brew invocation goes through
-    # `run`, which prints instead of executing. The callers that shell out to
-    # brew directly (the Caskroom scan and the drift report in packages.sh)
-    # are already inside `if [ "$DRY_RUN" != "1" ]` blocks.
+    # Return 1 here and packages.sh calls `die`, which bootstrap.sh treats as
+    # fatal. `./bootstrap.sh --dry-run` then stops after the Homebrew step and
+    # previews nothing else.
+    #
+    # Succeeding is safe. Under DRY_RUN every brew invocation goes through
+    # `run`, which prints instead of executing. The two callers that shell out
+    # to brew directly — the Caskroom scan and the drift report in packages.sh
+    # — already sit inside `if [ "$DRY_RUN" != "1" ]` blocks.
     if [ "${DRY_RUN:-0}" = "1" ]; then
       skip "Homebrew absent; previewing as though it had just been installed"
       return 0
@@ -173,9 +172,9 @@ activate_homebrew() {
     eval "$("$prefix/bin/brew" shellenv)"
   fi
 
-  # rustup is keg-only (it conflicts with the `rust` formula), so Homebrew does
-  # not symlink its binaries into bin/ — `rustup` itself is the one exception.
-  # Without this, `cargo` is absent even though the formula installed fine and
+  # rustup is keg-only, because it conflicts with the `rust` formula. Homebrew
+  # therefore does not symlink its binaries into bin/, except `rustup` itself.
+  # Without this line `cargo` is absent while the formula is installed and
   # `rustup` answers normally, which is a misleading way to fail.
   [ -d "$prefix/opt/rustup/bin" ] && export PATH="$prefix/opt/rustup/bin:$PATH"
   return 0
