@@ -25,49 +25,55 @@ is overwritten.
 
 ## What is set, and why
 
+The script records the settings of the machine this repo provisions. It sets only keys that differ
+from the macOS default. A key left at the default is absent, so `defaults read` and the script agree.
+
 ### Finder
 
 | Key | Effect |
 |---|---|
 | `AppleShowAllExtensions` | show file extensions. The default hides them, making `report.txt` and `report.txt.app` look alike |
-| `AppleShowAllFiles` | show dotfiles |
-| `ShowPathbar` / `ShowStatusBar` | show where you are and how much is here |
+| `ShowPathbar` | show the path of the current folder |
 | `FXPreferredViewStyle = Nlsv` | use list view by default |
 | `FXDefaultSearchScope = SCcf` | search the current folder, not the whole Mac |
 | `DSDontWriteNetworkStores` / `USBStores` | stop scattering `.DS_Store` onto shares and USB sticks |
 
-### Keyboard
+### Keyboard and text
 
 | Key | Effect |
 |---|---|
-| `KeyRepeat = 2`, `InitialKeyRepeat = 15` | faster than the Settings slider allows |
-| `ApplePressAndHoldEnabled = false` | hold a key to repeat it, instead of opening the accent picker. Required for vim, and for holding `j` or `l` anywhere |
-| `NSAutomaticQuoteSubstitutionEnabled = false` | stop turning `"` into `"`. That corrupts code pasted into any native text field |
-| `NSAutomaticDashSubstitutionEnabled = false` | stop turning `--` into `—`, which breaks pasted CLI flags |
-| `AppleKeyboardUIMode = 3` | Tab reaches every control in a dialog, not just text fields |
+| `NSAutomaticSpellingCorrectionEnabled = false` | no autocorrect in native text fields |
+| `WebAutomaticSpellingCorrectionEnabled = false` | no autocorrect in web views |
+| `NSAutomaticCapitalizationEnabled = false` | stop capitalising the first word, which breaks typed commands |
+| `NSAutomaticInlinePredictionEnabled = false` | no inline word predictions |
 
-The two substitution settings are the highest-value entries here. They corrupt text in a way that
-looks correct until a shell rejects it.
-
-### Dock
-
-Autohide with zero delay. Fixed Space order via `mru-spaces = false`, so Spaces stop reordering
-themselves and keyboard switching stays predictable. No recents. Minimize into the app icon.
-
-### Screenshots
-
-Saved to `~/Pictures/Screenshots` as PNG, without the window drop shadow. The default dumps them on
-the Desktop. The shadow adds ~40px of transparent margin that ruins any screenshot pasted into a
-document.
-
-### Misc
+### Appearance and Dock
 
 | Key | Effect |
 |---|---|
-| `com.apple.swipescrolldirection = false` | non-"natural" scrolling. Matches every external mouse |
-| `NSDocumentSaveNewDocumentsToCloud = false` | save to disk by default, not iCloud |
-| `NSNavPanelExpandedStateForSaveMode` | open save dialogs expanded |
-| `NSWindowResizeTime = 0.001` | resize windows instantly instead of animating |
+| `AppleInterfaceStyle = Dark` | dark mode |
+| `orientation = left` | Dock on the left edge. A side Dock costs less of a wide screen |
+| `autohide = true` | hide the Dock until the pointer reaches it |
+| `tilesize = 39`, `magnification = true`, `largesize = 54` | small icons that grow under the pointer |
+
+### Trackpad and windows
+
+| Key | Effect |
+|---|---|
+| `Clicking = true` | tap to click. Set in both trackpad domains: built-in and Bluetooth |
+| `EnableTiledWindowMargins = false` | tile windows edge to edge, with no gap |
+
+### Left at the macOS default
+
+These are common changes this machine does not make. Add a line to the script to set one.
+
+| Key | macOS default |
+|---|---|
+| `NSAutomaticQuoteSubstitutionEnabled`, `NSAutomaticDashSubstitutionEnabled` | on: `"` becomes a curly quote, `--` becomes `—` |
+| `KeyRepeat`, `InitialKeyRepeat`, `ApplePressAndHoldEnabled` | Settings slider speeds; holding a key opens the accent picker |
+| `AppleShowAllFiles` | dotfiles hidden in Finder. `⇧⌘.` toggles them |
+| `com.apple.swipescrolldirection` | "natural" scrolling |
+| `com.apple.screencapture location` | screenshots on the Desktop |
 
 ## Not automated on purpose
 

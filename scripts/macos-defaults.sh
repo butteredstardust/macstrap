@@ -21,67 +21,43 @@ log "Some settings need administrator rights; you may be prompted once."
 # Show file extensions. The default hides them, so `.txt` and `.txt.rtf` look
 # identical. That hides a downloaded file that is not what it claims to be.
 run defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-run defaults write com.apple.finder AppleShowAllFiles -bool true          # dotfiles
 run defaults write com.apple.finder ShowPathbar -bool true
-run defaults write com.apple.finder ShowStatusBar -bool true
 run defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"   # list view
 run defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"   # search this folder
-run defaults write com.apple.finder _FXSortFoldersFirst -bool true
 
 # Keep .DS_Store files off network shares and USB sticks. They are harmless
 # locally. They are noise in a shared or committed directory.
 run defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 run defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
-# --- Keyboard -------------------------------------------------------------
-# Fast key repeat. KeyRepeat=1 is faster than the Settings slider allows.
-run defaults write NSGlobalDomain KeyRepeat -int 2
-run defaults write NSGlobalDomain InitialKeyRepeat -int 15
-
-# Make a held key repeat instead of opening the accent picker. Holding j or l
-# in vim depends on it.
-run defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-
-# Turn off the "smart" substitutions. They rewrite straight quotes as curly ones
-# and `--` as an em dash. That corrupts code pasted into any text field.
-run defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
-run defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+# --- Keyboard & text ------------------------------------------------------
+# Stop macOS rewriting what you type. Autocorrect and capitalisation change
+# identifiers and commands typed into native text fields.
+run defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
+run defaults write NSGlobalDomain WebAutomaticSpellingCorrectionEnabled -bool false
 run defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
-run defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+run defaults write NSGlobalDomain NSAutomaticInlinePredictionEnabled -bool false
 
-# Full keyboard access: Tab moves between every control in a dialog, not just
-# text fields.
-run defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
+# --- Appearance -----------------------------------------------------------
+run defaults write NSGlobalDomain AppleInterfaceStyle -string "Dark"
 
 # --- Dock -----------------------------------------------------------------
+# Dock on the left edge, hidden until needed. The screen is wider than it is
+# tall, so a side Dock costs less space.
+run defaults write com.apple.dock orientation -string "left"
 run defaults write com.apple.dock autohide -bool true
-run defaults write com.apple.dock autohide-delay -float 0        # no hover delay
-run defaults write com.apple.dock autohide-time-modifier -float 0.15
-run defaults write com.apple.dock tilesize -int 48
-run defaults write com.apple.dock show-recents -bool false
-run defaults write com.apple.dock mru-spaces -bool false         # keep Space order fixed
-run defaults write com.apple.dock minimize-to-application -bool true
+run defaults write com.apple.dock tilesize -int 39
+run defaults write com.apple.dock magnification -bool true
+run defaults write com.apple.dock largesize -int 54
 
-# --- Screenshots ----------------------------------------------------------
-# Send screenshots to a folder instead of the Desktop. Drop the window shadow.
-run mkdir -p "$HOME/Pictures/Screenshots"
-run defaults write com.apple.screencapture location -string "$HOME/Pictures/Screenshots"
-run defaults write com.apple.screencapture type -string "png"
-run defaults write com.apple.screencapture disable-shadow -bool true
+# --- Trackpad & windows ---------------------------------------------------
+# Tap to click. Write both domains: the built-in and the Bluetooth trackpad
+# read separate plists.
+run defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+run defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
 
-# --- Trackpad & UI --------------------------------------------------------
-run defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false  # non-"natural"
-run defaults write NSGlobalDomain AppleShowScrollBars -string "WhenScrolling"
-run defaults write NSGlobalDomain NSWindowResizeTime -float 0.001             # instant windows
-run defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
-run defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
-
-# Save to disk by default, not iCloud.
-run defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
-
-# --- Safety ---------------------------------------------------------------
-# Crash reporter dialogs interrupt long builds. A notification is enough.
-run defaults write com.apple.CrashReporter UseUNC -int 1
+# Tile windows edge to edge, with no gap between them.
+run defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false
 
 # --- Apply ----------------------------------------------------------------
 if [ "$DRY_RUN" != "1" ]; then
