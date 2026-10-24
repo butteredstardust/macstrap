@@ -46,7 +46,7 @@ macOS 14+ on Apple Silicon or Intel. Nothing installs as root. The scripts refus
 | **CLI**       | `eza` `bat` `fd` `ripgrep` `dust` `procs` `delta` `jq` `gh` `htop`               |
 | **Languages** | rustup, node + pnpm + bun, uv for Python                                         |
 | **Editors**   | VS Code. Settings and extension list tracked in git                              |
-| **System**    | Finder, keyboard, Dock and screenshot defaults. Opt-in, all reversible           |
+| **System**    | Finder, keyboard, Dock and trackpad defaults. Opt-in, all reversible             |
 | **Upkeep**    | `doctor.sh` health check. Drift report for Brewfiles and VS Code settings         |
 
 ---
