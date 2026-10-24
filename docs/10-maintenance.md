@@ -29,7 +29,7 @@ uv tool upgrade --all
 ## Monthly
 
 ```bash
-scripts/doctor.sh          # verify links, tools, git identity, fonts
+scripts/doctor.sh          # verify links, tools, git identity, fonts; report drift
 brew autoremove            # drop orphaned dependencies
 brew cleanup --prune=all   # delete old downloads and versions
 brew doctor
@@ -42,8 +42,12 @@ brew doctor
 This step is what keeps undeclared packages from accumulating.
 
 ```bash
-scripts/packages.sh         # reports anything installed but not in a Brewfile
+scripts/doctor.sh           # read-only: reports undeclared packages and VS Code drift
+scripts/packages.sh         # installs, then prints the same package report
 ```
+
+Drift never fails `doctor.sh`. A package installed by hand or a local VS Code setting can be a
+deliberate choice. Each drift line names its fix.
 
 Or by hand:
 

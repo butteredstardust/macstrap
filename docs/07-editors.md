@@ -46,7 +46,8 @@ opening a cloned repo run its tasks and extension code without asking. That is d
 machine where you only clone your own work. It is indefensible as a default someone inherits by
 running this repo. Set it in your own user settings if you want it. The merge in
 `scripts/editors.sh` leaves it alone, as it does
-`security.promptForLocalFileProtocolHandling`.
+`security.promptForLocalFileProtocolHandling`. `scripts/doctor.sh` reports both while they are off,
+as a reminder rather than a failure.
 
 ### Settings that must not live here
 

@@ -22,6 +22,9 @@ brew "git-filter-repo"           # history surgery (rewriting authors, purging s
 brew "ack"                       # only if muscle memory demands it; ripgrep is better
 brew "caddy"                     # local HTTPS reverse proxy
 brew "nvm"                       # only if a project pins an old Node
+brew "minisign"                  # sign and verify release artifacts
+brew "charmbracelet/tap/freeze"  # render code or terminal output as an image
+brew "makensis"                  # NSIS: build Windows installers, e.g. Tauri bundles
 
 # --- Mac housekeeping -----------------------------------------------------
 cask "pearcleaner"               # uninstaller that actually removes leftovers
