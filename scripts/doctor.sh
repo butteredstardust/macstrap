@@ -100,7 +100,21 @@ if have zsh; then
   fi
 fi
 
+# --- Drift ----------------------------------------------------------------
+# Advisory only. Drift does not count as a failure: an undeclared package or a
+# local setting can be a deliberate choice. Each line names the fix.
+drift=0
+if have brew; then
+  report_brew_drift || drift=$((drift + 1))
+fi
+vscode_settings="$HOME/Library/Application Support/Code/User/settings.json"
+if have code || [ -f "$vscode_settings" ]; then
+  python3 "$MACSTRAP_ROOT/scripts/vscode-settings.py" check "$vscode_settings" >&2 \
+    || drift=$((drift + 1))
+fi
+
 printf '\n'
+[ "$drift" -eq 0 ] || warn "drift found above; see docs/10-maintenance.md"
 if [ "$failures" -eq 0 ]; then
   ok "all checks passed"
 else

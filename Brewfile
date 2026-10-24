@@ -65,3 +65,4 @@ cask "codex"                     # OpenAI Codex CLI; ships as a cask, not a form
 brew "topgrade"                  # one command to update everything
 brew "mas"                       # Mac App Store CLI, for `brew bundle dump`
 brew "shellcheck"                # required by scripts/test.sh
+brew "actionlint"                # lints GitHub Actions workflows; pairs with shellcheck

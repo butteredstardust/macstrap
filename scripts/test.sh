@@ -218,7 +218,34 @@ else
   fail "activate_homebrew skipped the keg-only rustup PATH"
 fi
 
-# --- 8. Docs referential integrity ----------------------------------------
+# --- 8. VS Code settings merge and check -----------------------------------
+# Run both modes against throwaway files. Never touch the real settings.json.
+header "VS Code settings"
+vs="$TMPDIR_TEST/vscode"
+mkdir -p "$vs"
+vs_script="$MACSTRAP_ROOT/scripts/vscode-settings.py"
+
+# The merge must keep keys the repo does not declare. A line holding a URL must
+# survive comment stripping.
+printf '{\n  "local.url": "http://localhost:8082",\n  "editor.fontSize": 99\n}\n' > "$vs/merge.json"
+if python3 "$vs_script" merge "$vs/merge.json" >/dev/null \
+   && grep -Fq '"local.url": "http://localhost:8082"' "$vs/merge.json" \
+   && python3 "$vs_script" check "$vs/merge.json" >/dev/null; then
+  ok "merge keeps local keys and leaves no drift"
+else
+  fail "merge lost a local key or left drift behind"
+fi
+
+# The check must flag a disabled workspace trust, which the merge never resets.
+printf '{ "security.workspace.trust.enabled": false }\n' > "$vs/risky.json"
+python3 "$vs_script" merge "$vs/risky.json" >/dev/null
+if python3 "$vs_script" check "$vs/risky.json" >/dev/null; then
+  fail "check passed with security.workspace.trust.enabled false"
+else
+  ok "check flags workspace trust turned off"
+fi
+
+# --- 9. Docs referential integrity ----------------------------------------
 header "docs"
 missing=0
 # Feed this from a pipeline, not `for doc in $(...)`. A path is one line, not

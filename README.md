@@ -47,7 +47,7 @@ macOS 14+ on Apple Silicon or Intel. Nothing installs as root. The scripts refus
 | **Languages** | rustup, node + pnpm + bun, uv for Python                                         |
 | **Editors**   | VS Code. Settings and extension list tracked in git                              |
 | **System**    | Finder, keyboard, Dock and screenshot defaults. Opt-in, all reversible           |
-| **Upkeep**    | `doctor.sh` health check. Drift report against the Brewfiles                     |
+| **Upkeep**    | `doctor.sh` health check. Drift report for Brewfiles and VS Code settings         |
 
 ---
 
@@ -85,8 +85,9 @@ scripts/
   dotfiles.sh             symlink dotfiles, render git identity
   languages.sh            rust toolchain, node check, uv tools
   editors.sh              VS Code settings + extensions, Claude Code
+  vscode-settings.py      merge or check VS Code settings (JSONC)
   macos-defaults.sh       system preferences (opt-in)
-  doctor.sh               read-only health check
+  doctor.sh               read-only health check + drift report
   test.sh                 lint, privacy scan, simulated fresh-machine run
 dotfiles/                 the actual config, symlinked into ~
 docs/                     why each decision was made

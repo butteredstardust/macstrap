@@ -179,3 +179,66 @@ activate_homebrew() {
   [ -d "$prefix/opt/rustup/bin" ] && export PATH="$prefix/opt/rustup/bin:$PATH"
   return 0
 }
+
+# --- Drift ----------------------------------------------------------------
+# report_brew_drift — list packages installed by hand and never declared in a
+# Brewfile. Returns 1 when it finds any, 0 when the machine is clean.
+#
+# Report only, never remove. Uninstalling a package unasked is not a
+# provisioning script's call. Call it only when brew is on PATH.
+report_brew_drift() {
+  local tmp b c existing="" installed_casks="" cask_root extra status=0
+  tmp="$(mktemp -d)"
+
+  # Concatenate only the bundles that exist. Brewfile.optional is documented as
+  # "remove freely", and under `set -o pipefail` a missing file would abort the
+  # caller instead of degrading.
+  for b in Brewfile Brewfile.apps Brewfile.optional Brewfile.local; do
+    [ -f "$MACSTRAP_ROOT/$b" ] && existing="$existing $MACSTRAP_ROOT/$b"
+  done
+
+  # Use -E (ERE). BSD sed's basic regex has no `\|` alternation, so a BRE
+  # version matches nothing and reports every package as undeclared.
+  # The trailing `s#.*/##` strips the tap prefix from e.g. oven-sh/bun/bun.
+  # shellcheck disable=SC2086  # word splitting is the point here
+  cat $existing \
+    | sed -nE 's/^[[:space:]]*(brew|cask) "([^"]*)".*/\2/p' \
+    | sed 's#.*/##' | sort -u > "$tmp/declared"
+
+  # Strip the tap prefix on this side too. `brew leaves` prints tapped formulae
+  # fully qualified (oven-sh/bun/bun) while the Brewfile side is already bare.
+  # Without this, every tapped package reports as undeclared.
+  #
+  # Note that `brew leaves` omits untrusted taps entirely, so this report
+  # under-counts rather than over-counts while a tap is untrusted.
+  #
+  # Read the Caskroom instead of `brew list --cask`. Homebrew keeps a renamed
+  # cask's old token working forever through a Caskroom symlink, and
+  # `brew list --cask` prints BOTH names. `docker` and `docker-desktop` are one
+  # 2.3GB install, not two. The old token can never be declared either, because
+  # `brew install docker` resolves to the new one. Keeping only real
+  # directories yields the canonical name exactly once.
+  cask_root="$(brew --prefix)/Caskroom"
+  if [ -d "$cask_root" ]; then
+    for c in "$cask_root"/*; do
+      [ -d "$c" ] && [ ! -L "$c" ] && installed_casks="$installed_casks
+${c##*/}"
+    done
+  fi
+
+  { brew leaves; printf '%s\n' "$installed_casks"; } 2>/dev/null \
+    | sed 's#.*/##' | grep -v '^$' | sort -u > "$tmp/installed"
+
+  if extra="$(comm -13 "$tmp/declared" "$tmp/installed")" && [ -n "$extra" ]; then
+    warn "installed but not in any Brewfile:"
+    # shellcheck disable=SC2086  # word splitting is the point: one name per line
+    printf '       %s\n' $extra >&2
+    warn "either add them to a Brewfile or 'brew uninstall' them"
+    status=1
+  else
+    ok "no undeclared packages"
+  fi
+
+  rm -rf "$tmp"
+  return "$status"
+}

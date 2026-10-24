@@ -100,8 +100,8 @@ There is no `brew trust --list`; read the file.
 
 **The trap:** `brew leaves` omits an untrusted tap's packages entirely. They are installed and on
 your `PATH`, but the drift report cannot see them. The report then reads clean while the machine is
-not. Check the trust file first whenever `scripts/packages.sh` says "no undeclared packages" and you
-do not believe it.
+not. Check the trust file first whenever `scripts/doctor.sh` or `scripts/packages.sh` says "no
+undeclared packages" and you do not believe it.
 
 ## npm globals shadow Homebrew formulae
 

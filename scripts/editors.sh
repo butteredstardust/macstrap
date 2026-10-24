@@ -33,56 +33,7 @@ if have code || [ "$DRY_RUN" = "1" ]; then
     # empty object, and write only the repo's keys. That would remove every
     # setting VS Code put there itself.
     backup_copy "$VSCODE_USER_DIR/settings.json"
-    MACSTRAP_ROOT="$MACSTRAP_ROOT" VSCODE_USER_DIR="$VSCODE_USER_DIR" python3 - <<'PY'
-import collections, json, os, re
-
-dst = os.path.join(os.environ["VSCODE_USER_DIR"], "settings.json")
-src = os.path.join(os.environ["MACSTRAP_ROOT"], "dotfiles/vscode/settings.json")
-
-
-def load(path):
-    """Parse the JSONC that VS Code writes: line and block comments, trailing commas.
-
-    Keep both comment patterns anchored to the start of a line. Stripping `//`
-    anywhere would eat the rest of any line holding a URL, and this file holds
-    URLs such as an extension endpoint or a proxy address. An unanchored pattern
-    would corrupt real settings instead of failing loudly. Comments inside a
-    value stay untouched, and JSON cannot express one anyway.
-    """
-    if not os.path.exists(path):
-        return collections.OrderedDict()
-    text = open(path).read()
-    text = re.sub(r"^\s*//.*$", "", text, flags=re.M)
-    text = re.sub(r"^\s*/\*.*?\*/", "", text, flags=re.M | re.S)
-    text = re.sub(r",(\s*[}\]])", r"\1", text)
-    if not text.strip():
-        return collections.OrderedDict()
-    return json.loads(text, object_pairs_hook=collections.OrderedDict)
-
-
-try:
-    merged = load(dst)
-except ValueError as exc:
-    # Refuse rather than guess. Raising would kill the whole editors step under
-    # `set -e`. An unparseable file here is one the user edited by hand, so
-    # overwriting it is the worst available option. The backup_copy above is
-    # already in place.
-    print("  !! %s is not valid JSON/JSONC: %s" % (dst, exc))
-    print("  !! settings left untouched. Fix the file, then re-run scripts/editors.sh")
-    raise SystemExit(0)
-
-added = []
-for key, value in load(src).items():
-    if key not in merged:
-        added.append(key)
-    merged[key] = value
-
-with open(dst, "w") as fh:
-    json.dump(merged, fh, indent=2)
-    fh.write("\n")
-
-print("  ok settings.json merged (%d added, %d kept)" % (len(added), len(merged) - len(added)))
-PY
+    python3 "$MACSTRAP_ROOT/scripts/vscode-settings.py" merge "$VSCODE_USER_DIR/settings.json"
   fi
 
   log "Installing extensions"
