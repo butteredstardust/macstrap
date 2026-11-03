@@ -22,7 +22,7 @@ path_prepend() {
 }
 
 path_prepend "$HOME/.local/bin"                  # uv tools / standalone installs
-path_prepend "${PNPM_HOME:-$HOME/Library/pnpm}"  # pnpm global bins
+path_prepend "${PNPM_HOME:-$HOME/Library/pnpm}/bin"  # pnpm global bins
 path_prepend "$HOME/.bun/bin"
 export PNPM_HOME="${PNPM_HOME:-$HOME/Library/pnpm}"
 
