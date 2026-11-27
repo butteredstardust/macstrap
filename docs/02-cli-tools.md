@@ -22,6 +22,11 @@ missing.
 `.zshrc`, never in `.zshenv`. Non-interactive shells do not expand aliases, so scripts keep getting
 the real `cat`.
 
+**Coding agents:** Claude Code and Codex start an interactive shell, so they read `.zshrc` and get
+the aliases. Their commands then fail: `ls -t` hits eza's flags, and `du -sh` prints dust's help.
+`.zshrc` skips the alias block when `CLAUDECODE` (Claude Code) or `CODEX_THREAD_ID` (Codex) is
+set. Your own terminal keeps the aliases.
+
 ## Kept as-is
 
 | Tool | Why not replaced |

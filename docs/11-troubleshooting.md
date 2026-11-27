@@ -91,8 +91,8 @@ There is no Brewfile syntax for this, on purpose. Trusting a tap means agreeing 
 maintainers' Ruby, which should be a deliberate act. `scripts/packages.sh` asks once per tap.
 
 ```bash
-brew trust --formula yoanbernabeu/tap/grepai   # narrow: this one package
-brew trust --tap oven-sh/bun                   # broad: everything in the tap, now and future
+brew trust --formula anomalyco/tap/opencode   # narrow: this one package
+brew trust --tap oven-sh/bun                  # broad: everything in the tap, now and future
 ```
 
 Trust state lives in `~/.homebrew/trust.json` (or `$XDG_CONFIG_HOME/homebrew/` if that is set).
