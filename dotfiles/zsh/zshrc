@@ -60,17 +60,23 @@ bindkey "^[[A" history-beginning-search-backward-end
 bindkey "^[[B" history-beginning-search-forward-end
 
 # --- Aliases --------------------------------------------------------------
-if command -v eza >/dev/null; then
-  unalias -m 'ls' 'll' 2>/dev/null
-  alias ls='eza --header --group --git --long'
-  alias ll='eza --header --group --git --long --all'
-  alias ls.tree='eza --header --group --tree --level=2 --git --long --icons'
-  alias ll.tree='eza --header --group --tree --level=2 --git --long --icons --all'
-fi
+# WARNING: These aliases replace ls, cat, ps and du with tools that take other
+# flags and print other output. Coding agents load this file through an
+# interactive shell, so they skip the block to keep the standard commands.
+# Claude Code sets CLAUDECODE. Codex sets CODEX_THREAD_ID.
+if [[ -z "$CLAUDECODE" && -z "$CODEX_THREAD_ID" ]]; then
+  if command -v eza >/dev/null; then
+    unalias -m 'ls' 'll' 2>/dev/null
+    alias ls='eza --header --group --git --long'
+    alias ll='eza --header --group --git --long --all'
+    alias ls.tree='eza --header --group --tree --level=2 --git --long --icons'
+    alias ll.tree='eza --header --group --tree --level=2 --git --long --icons --all'
+  fi
 
-command -v bat  >/dev/null && alias cat='bat --paging=never' && alias catp='bat'
-command -v procs >/dev/null && alias ps='procs'
-command -v dust  >/dev/null && alias du='dust'
+  command -v bat  >/dev/null && alias cat='bat --paging=never' && alias catp='bat'
+  command -v procs >/dev/null && alias ps='procs'
+  command -v dust  >/dev/null && alias du='dust'
+fi
 
 alias ..='cd ..'
 alias ...='cd ../..'
